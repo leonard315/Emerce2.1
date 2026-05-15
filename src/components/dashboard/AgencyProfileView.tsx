@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
 import { doc, setDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useAuth } from '@/hooks/use-auth';
@@ -11,12 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Navigation, MapPin, Camera, Pencil, Check, X, Loader2 } from 'lucide-react';
+import { Camera, Pencil, Check, X, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-
-const AgencyLocationMap = dynamic(() => import('./AgencyLocationMap'), { ssr: false });
 
 interface AgencyProfileViewProps {
   agencyColor: string;
@@ -28,22 +25,13 @@ export function AgencyProfileView({ agencyColor, badgeClass }: AgencyProfileView
   const db = useFirestore();
   const { toast } = useToast();
 
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [mounted, setMounted] = useState(false);
-
-  // Edit state
   const [editing, setEditing] = useState(false);
   const [nameValue, setNameValue] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        pos => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
-        () => {}
-      );
-    }
   }, []);
 
   useEffect(() => {
@@ -195,48 +183,6 @@ export function AgencyProfileView({ agencyColor, badgeClass }: AgencyProfileView
             />
           </div>
         </div>
-      </Card>
-
-      {/* Current location */}
-      <Card className="bg-slate-900/40 border-white/5 rounded-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-slate-400" /> Current Location
-          </h3>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs text-slate-400 hover:text-white gap-1.5 h-7"
-            onClick={() => {
-              if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                  pos => setUserLocation([pos.coords.latitude, pos.coords.longitude])
-                );
-              }
-            }}
-          >
-            <Navigation className="h-3.5 w-3.5" /> Refresh
-          </Button>
-        </div>
-        {userLocation ? (
-          <>
-            <div className="px-6 py-3 border-b border-white/5">
-              <p className="text-xs text-slate-400">
-                GPS: <span className="text-white font-mono">{userLocation[0].toFixed(5)}, {userLocation[1].toFixed(5)}</span>
-              </p>
-            </div>
-            <div className="h-64">
-              <AgencyLocationMap userLocation={userLocation} />
-            </div>
-          </>
-        ) : (
-          <div className="h-32 flex items-center justify-center text-slate-500 text-sm">
-            <div className="text-center">
-              <MapPin className="h-8 w-8 mx-auto mb-2 opacity-30" />
-              <p>Enable location access to see your position</p>
-            </div>
-          </div>
-        )}
       </Card>
     </div>
   );
