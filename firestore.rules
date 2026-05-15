@@ -78,7 +78,7 @@ service cloud.firestore {
 
     match /users/{userId}/alerts/{alertId} {
       allow get, list: if isOwner(userId) || isAdmin() || isAnyAgency();
-      allow create: if isOwner(userId);
+      allow create: if isOwner(userId) || isAnyAgency();
       // Owner can update their own alert; agencies and admin can update status/responder fields
       allow update: if isOwner(userId) || isAdmin() || isAnyAgency();
     }
@@ -99,32 +99,30 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow read, list: if isAdmin() || isFireAgency();
       allow update: if isAdmin() || isFireAgency();
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || isFireAgency();
     }
 
     match /agency_alerts_police/{alertId} {
       allow create: if isSignedIn();
       allow read, list: if isAdmin() || isPoliceAgency();
       allow update: if isAdmin() || isPoliceAgency();
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || isPoliceAgency();
     }
 
     match /agency_alerts_medical/{alertId} {
       allow create: if isSignedIn();
       allow read, list: if isAdmin() || isMedicalAgency();
       allow update: if isAdmin() || isMedicalAgency();
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || isMedicalAgency();
     }
 
     // ── All alerts (admin + agency read, anyone can create) ─────────────────
 
     match /all_alerts/{alertId} {
       allow create: if isSignedIn();
-      // Any signed-in user can read all_alerts (needed for live map and user history)
       allow get, list: if isSignedIn();
-      // Only agencies and admin can update status
       allow update: if isAdmin() || isAnyAgency();
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || isAnyAgency();
     }
 
     // ── Feedback / questionnaire ────────────────────────────────────────────
