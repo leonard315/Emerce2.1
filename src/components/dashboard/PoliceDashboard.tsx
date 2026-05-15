@@ -71,8 +71,12 @@ export function PoliceDashboard() {
       playNewIncident('police');
       playSiren('police');
     }
+    // Stop siren when all pending alerts are responded to
+    if (prevCountRef.current !== null && pending === 0 && prevCountRef.current > 0) {
+      stopSiren();
+    }
     prevCountRef.current = pending;
-  }, [alerts, playNewIncident, playSiren]);
+  }, [alerts, playNewIncident, playSiren, stopSiren]);
 
   const performAIAnalysis = async (alert: EmergencyAlert) => {
     if (!db) return;
