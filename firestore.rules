@@ -79,18 +79,17 @@ service cloud.firestore {
     match /users/{userId}/alerts/{alertId} {
       allow get, list: if isOwner(userId) || isAdmin() || isAnyAgency();
       allow create: if isOwner(userId) || isAnyAgency();
-      // Owner can update their own alert; agencies and admin can update status/responder fields
       allow update: if isOwner(userId) || isAdmin() || isAnyAgency();
+      allow delete: if isOwner(userId) || isAdmin();
     }
 
     // ── User notifications (subcollection) ──────────────────────────────────
 
     match /users/{userId}/notifications/{notifId} {
       allow get, list: if isOwner(userId) || isAdmin();
-      // Agencies and admin can create notifications (false report warnings)
       allow create: if isAdmin() || isAnyAgency();
-      // Owner can update (mark as read); admin can also update
       allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isOwner(userId) || isAdmin();
     }
 
     // ── Agency alert queues ─────────────────────────────────────────────────
@@ -130,6 +129,7 @@ service cloud.firestore {
     match /users/{userId}/questionnaire_responses/{responseId} {
       allow get, list: if isOwner(userId) || isAdmin();
       allow create: if isOwner(userId);
+      allow delete: if isAdmin();
     }
 
     match /all_questionnaire_responses/{responseId} {
