@@ -50,9 +50,9 @@ export function MedicalDashboard() {
   const [currentView, setCurrentView] = useState("dashboard");
 
   const alertsQuery = useMemoFirebase(() => {
-    if (!profile || !db) return null;
+    if (!db) return null;
     return query(collection(db, 'agency_alerts_medical'), orderBy('timestamp', 'desc'));
-  }, [db, profile?.uid]);
+  }, [db]);
 
   const { data: alertsData, isLoading } = useCollection<EmergencyAlert>(alertsQuery);
   const alerts = alertsData || [];
@@ -61,6 +61,7 @@ export function MedicalDashboard() {
   const prevCountRef = useRef<number | null>(null);
 
   useEffect(() => {
+    if (isLoading) return;
     const pending = alerts.filter(a => a.status === 'pending').length;
     if (prevCountRef.current !== null && pending > prevCountRef.current) {
       playNewIncident('medical');
@@ -69,7 +70,7 @@ export function MedicalDashboard() {
       stopSiren();
     }
     prevCountRef.current = pending;
-  }, [alerts, playNewIncident, playSiren, stopSiren]);
+  }, [alerts, isLoading, playNewIncident, playSiren, stopSiren]);
 
   const performAIAnalysis = async (alert: EmergencyAlert) => {
     if (!db) return;

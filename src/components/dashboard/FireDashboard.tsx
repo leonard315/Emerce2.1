@@ -56,9 +56,9 @@ export function FireDashboard() {
   const [currentView, setCurrentView] = useState("dashboard");
 
   const alertsQuery = useMemoFirebase(() => {
-    if (!profile || !db) return null;
+    if (!db) return null;
     return query(collection(db, 'agency_alerts_fire'), orderBy('timestamp', 'desc'));
-  }, [db, profile?.uid]);
+  }, [db]);
 
   const { data: alertsData, isLoading } = useCollection<EmergencyAlert>(alertsQuery);
   const alerts = alertsData || [];
@@ -67,6 +67,7 @@ export function FireDashboard() {
   const prevCountRef = useRef<number | null>(null);
 
   useEffect(() => {
+    if (isLoading) return; // wait for real Firestore snapshot before establishing baseline
     const pending = alerts.filter(a => a.status === 'pending').length;
     if (prevCountRef.current !== null && pending > prevCountRef.current) {
       // New pending alert arrived — play sound
@@ -77,7 +78,7 @@ export function FireDashboard() {
       stopSiren();
     }
     prevCountRef.current = pending;
-  }, [alerts, playNewIncident, playSiren, stopSiren]);
+  }, [alerts, isLoading, playNewIncident, playSiren, stopSiren]);
 
   const performAIAnalysis = async (alert: EmergencyAlert) => {
     if (!db) return;

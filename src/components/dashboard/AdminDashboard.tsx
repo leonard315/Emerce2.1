@@ -310,7 +310,6 @@ export function AdminDashboard() {
 
   const handleDeleteUser = async () => {
     if (!selectedUser || !db) return;
-    // Protect admin accounts from deletion
     if (selectedUser.role === 'admin') {
       toast({ variant: 'destructive', title: 'Cannot delete admin', description: 'Admin accounts are protected and cannot be deleted.' });
       setDeleteConfirmOpen(false);
@@ -318,7 +317,6 @@ export function AdminDashboard() {
     }
     setDeletingUser(true);
     try {
-      // Delete from role collections
       const roleCollections = [
         'roles_admin', 'roles_fire_agency', 'roles_police_agency',
         'roles_medical_agency', 'roles_general_users',
@@ -329,7 +327,19 @@ export function AdminDashboard() {
       });
       batch.delete(doc(db, 'users', selectedUser.uid));
       await batch.commit();
-      toast({ title: 'Account deleted', description: `${selectedUser.name}'s account has been permanently deleted.` });
+
+      // Also delete all alerts from agency collections that belong to this user
+      // (subcollections can't be batch-deleted from client, but we clean up top-level docs)
+      const { getDocs, query: fsQuery, where, deleteDoc: fsDeleteDoc } = await import('firebase/firestore');
+      const agencyCollections = ['agency_alerts_fire', 'agency_alerts_police', 'agency_alerts_medical', 'all_alerts'];
+      for (const col of agencyCollections) {
+        const snap = await getDocs(fsQuery(collection(db, col), where('userId', '==', selectedUser.uid)));
+        for (const d of snap.docs) {
+          await fsDeleteDoc(d.ref);
+        }
+      }
+
+      toast({ title: 'Account deleted', description: `${selectedUser.name}'s account and all associated alerts have been permanently deleted.` });
       setDeleteConfirmOpen(false);
       setSelectedUser(null);
     } catch (e: any) {

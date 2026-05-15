@@ -55,9 +55,9 @@ export function PoliceDashboard() {
   const [currentView, setCurrentView] = useState("dashboard");
 
   const alertsQuery = useMemoFirebase(() => {
-    if (!profile || !db) return null;
+    if (!db) return null;
     return query(collection(db, 'agency_alerts_police'), orderBy('timestamp', 'desc'));
-  }, [db, profile?.uid]);
+  }, [db]);
 
   const { data: alertsData, isLoading } = useCollection<EmergencyAlert>(alertsQuery);
   const alerts = alertsData || [];
@@ -66,6 +66,7 @@ export function PoliceDashboard() {
   const prevCountRef = useRef<number | null>(null);
 
   useEffect(() => {
+    if (isLoading) return;
     const pending = alerts.filter(a => a.status === 'pending').length;
     if (prevCountRef.current !== null && pending > prevCountRef.current) {
       playNewIncident('police');
@@ -74,7 +75,7 @@ export function PoliceDashboard() {
       stopSiren();
     }
     prevCountRef.current = pending;
-  }, [alerts, playNewIncident, playSiren, stopSiren]);
+  }, [alerts, isLoading, playNewIncident, playSiren, stopSiren]);
 
   const performAIAnalysis = async (alert: EmergencyAlert) => {
     if (!db) return;
