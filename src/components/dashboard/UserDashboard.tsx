@@ -744,30 +744,39 @@ export function UserDashboard() {
                 </div>
               )}
 
-              <div className="flex items-center gap-4 bg-slate-900/40 p-6 md:p-8 rounded-[2.5rem] border border-white/5 mb-10 shadow-2xl">
-                <div className="bg-slate-800/80 p-4 rounded-2xl border border-white/10 flex-shrink-0">
-                  <Menu className="h-8 w-8 text-slate-400" />
+              <div className="flex items-center gap-4 bg-slate-900/40 p-5 rounded-2xl border border-white/5 shadow-lg">
+                <div className="relative flex-shrink-0">
+                  <div className="h-12 w-12 rounded-2xl bg-slate-800 border border-white/10 overflow-hidden">
+                    {profile?.photoURL
+                      ? <img src={profile.photoURL} alt="avatar" className="w-full h-full object-cover" />
+                      : <div className="w-full h-full flex items-center justify-center text-white font-black text-lg">{profile?.name?.charAt(0)?.toUpperCase()}</div>}
+                  </div>
+                  <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 border-2 border-[#020617]" />
                 </div>
-                <div>
-                  <h1 className="text-3xl md:text-4xl font-black text-white tracking-tighter uppercase italic">Hi, {profile?.name} 👋</h1>
-                  <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mt-1">Tap an emergency button to report instantly</p>
+                <div className="min-w-0">
+                  <h1 className="text-xl font-black text-white truncate">Hi, {profile?.name} 👋</h1>
+                  <p className="text-xs text-slate-500 mt-0.5">Select an incident type to report instantly</p>
+                </div>
+                <div className="ml-auto flex items-center gap-2 flex-shrink-0">
+                  <span className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 text-[11px] font-bold text-green-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />System Active
+                  </span>
                 </div>
               </div>
 
-              <div className="space-y-6">
-                <div className="flex items-center gap-3 px-4">
-                  <div className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />
-                  <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Select Emergency Type</h2>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                  <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500">Select Incident Type</h2>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 gap-3">
                   {emergencyButtons.map((btn) => (
-                    <Button 
-                      key={btn.type} 
-                      onClick={() => { 
-                        setSelectedType(btn.type); 
+                    <button
+                      key={btn.type}
+                      onClick={() => {
+                        setSelectedType(btn.type);
                         setConfirmOpen(true);
-                        // Start GPS acquisition immediately
                         setGpsStatus('acquiring');
                         navigator.geolocation?.getCurrentPosition(
                           async pos => {
@@ -779,57 +788,57 @@ export function UserDashboard() {
                           () => setGpsStatus('denied'),
                           { timeout: 8000, enableHighAccuracy: true }
                         );
-                      }} 
-                      disabled={isSubmitting || isDeactivated} 
+                      }}
+                      disabled={isSubmitting || isDeactivated}
                       className={cn(
-                        "h-[220px] md:h-[250px] lg:h-[280px] rounded-[3rem] flex flex-col items-center justify-center gap-6 transition-all active:scale-95 relative overflow-hidden",
+                        "group relative flex flex-col items-center justify-center gap-3 rounded-2xl p-6 h-[160px] transition-all duration-200 active:scale-95 overflow-hidden border border-white/10",
                         btn.color,
-                        "hover:brightness-110 shadow-2xl border-none",
+                        "hover:brightness-110 hover:scale-[1.02] shadow-lg",
                         isDeactivated && "opacity-40 cursor-not-allowed"
                       )}
                     >
-                      <div className="space-y-4 text-center">
-                        <btn.icon className="h-14 w-14 mx-auto text-white" />
-                        <div className="space-y-2">
-                          <span className="text-2xl md:text-3xl font-black block text-white tracking-[0.1em] italic leading-none">{btn.title}</span>
-                          <span className="text-[10px] font-black block text-white/70 uppercase tracking-[0.2em]">{btn.subtitle}</span>
-                        </div>
+                      {/* Subtle inner glow */}
+                      <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <btn.icon className="h-8 w-8 text-white drop-shadow-md relative z-10" strokeWidth={1.75} />
+                      <div className="text-center relative z-10">
+                        <span className="text-lg font-black text-white tracking-wide block leading-none">{btn.title}</span>
+                        <span className="text-[10px] text-white/60 font-medium mt-1 block">{btn.subtitle}</span>
                       </div>
-                    </Button>
+                    </button>
                   ))}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 mt-16">
-                <Card className="bg-slate-900/40 border-white/5 lg:col-span-2 overflow-hidden shadow-2xl rounded-[3rem]">
-                  <CardHeader className="flex flex-row items-center justify-between border-b border-white/5 py-8 px-10">
-                    <CardTitle className="text-[10px] font-black uppercase tracking-[0.4em] text-white">Transmission History</CardTitle>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
+                <Card className="bg-slate-900/40 border-white/5 lg:col-span-2 overflow-hidden rounded-2xl">
+                  <CardHeader className="flex flex-row items-center justify-between border-b border-white/5 py-4 px-5">
+                    <CardTitle className="text-sm font-bold text-white">Recent Reports</CardTitle>
                     <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
                       <DialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500 hover:text-white">
-                          <Star className="h-4 w-4 mr-2" /> Evaluation
+                        <Button variant="ghost" size="sm" className="text-xs font-semibold text-slate-400 hover:text-white gap-1.5">
+                          <Star className="h-3.5 w-3.5" /> Feedback
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="bg-slate-950 border-white/5 rounded-[3rem] p-10">
+                      <DialogContent className="bg-slate-950 border-white/5 rounded-2xl p-6">
                         <DialogHeader>
-                          <DialogTitle className="text-2xl font-black text-white uppercase tracking-tighter italic">System Evaluation</DialogTitle>
+                          <DialogTitle className="text-lg font-black text-white">Submit Feedback</DialogTitle>
                         </DialogHeader>
-                        <div className="space-y-10 py-8">
-                          <div className="space-y-4">
-                            <Label className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Ease of Use</Label>
-                            <Slider value={easeOfUse} onValueChange={setEaseOfUse} max={5} min={1} step={1} className="py-4" />
+                        <div className="space-y-5 py-3">
+                          <div className="space-y-2">
+                            <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Ease of Use</Label>
+                            <Slider value={easeOfUse} onValueChange={setEaseOfUse} max={5} min={1} step={1} className="py-2" />
                           </div>
-                          <div className="space-y-4">
-                            <Label className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Reliability</Label>
-                            <Slider value={reliability} onValueChange={setReliability} max={5} min={1} step={1} className="py-4" />
+                          <div className="space-y-2">
+                            <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Reliability</Label>
+                            <Slider value={reliability} onValueChange={setReliability} max={5} min={1} step={1} className="py-2" />
                           </div>
-                          <div className="space-y-4">
-                            <Label className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Comments</Label>
-                            <Textarea value={comments} onChange={(e) => setComments(e.target.value)} className="bg-slate-900 border-white/10 rounded-2xl h-32" />
+                          <div className="space-y-2">
+                            <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Comments</Label>
+                            <Textarea value={comments} onChange={(e) => setComments(e.target.value)} className="bg-slate-900 border-white/10 rounded-xl h-24 resize-none" />
                           </div>
                         </div>
                         <DialogFooter>
-                          <Button onClick={submitFeedback} className="w-full h-16 bg-primary font-black uppercase tracking-[0.3em] rounded-2xl">Submit Report</Button>
+                          <Button onClick={submitFeedback} className="w-full h-11 bg-red-600 hover:bg-red-500 font-bold rounded-xl">Submit Feedback</Button>
                         </DialogFooter>
                       </DialogContent>
                     </Dialog>
@@ -838,42 +847,33 @@ export function UserDashboard() {
                     <Table>
                       <TableHeader className="bg-white/5">
                         <TableRow className="border-b border-white/5">
-                          <TableHead className="px-10 h-16 font-black uppercase text-[10px] text-slate-500 tracking-[0.3em]">Sector</TableHead>
-                          <TableHead className="h-16 font-black uppercase text-[10px] text-slate-500 tracking-[0.3em]">Time</TableHead>
-                          <TableHead className="px-10 h-16 font-black uppercase text-[10px] text-slate-500 tracking-[0.3em] text-right">Status</TableHead>
+                          <TableHead className="px-5 h-11 font-bold text-[11px] text-slate-500 uppercase tracking-widest">Type</TableHead>
+                          <TableHead className="h-11 font-bold text-[11px] text-slate-500 uppercase tracking-widest">Time</TableHead>
+                          <TableHead className="px-5 h-11 font-bold text-[11px] text-slate-500 uppercase tracking-widest text-right">Status</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {alertsLoading ? (
-                          <TableRow>
-                            <TableCell colSpan={3} className="text-center py-16">
-                              <Loader2 className="h-5 w-5 animate-spin text-slate-600 mx-auto" />
-                            </TableCell>
-                          </TableRow>
+                          <TableRow><TableCell colSpan={3} className="text-center py-10"><Loader2 className="h-5 w-5 animate-spin text-slate-600 mx-auto" /></TableCell></TableRow>
                         ) : alerts.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={3} className="text-center py-16">
-                              <div className="flex flex-col items-center gap-3">
-                                <Radio className="h-8 w-8 text-slate-700" />
-                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">No transmissions yet</p>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ) : alerts.map((alert) => (
+                          <TableRow><TableCell colSpan={3} className="text-center py-10 text-slate-500 text-sm">No reports yet</TableCell></TableRow>
+                        ) : alerts.slice(0, 8).map((alert) => (
                           <TableRow key={alert.id} className="border-b border-white/5 hover:bg-white/5">
-                            <TableCell className="px-10 py-6 font-black uppercase text-sm text-white italic tracking-tight">
-                              <div className="flex items-center gap-4">
-                                <div className={cn("h-2.5 w-2.5 rounded-full", alert.type === 'fire' ? 'bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]' : alert.type === 'crime' ? 'bg-blue-500 shadow-[0_0_10px_rgba(37,99,235,0.5)]' : 'bg-red-500 shadow-[0_0_10px_rgba(220,38,38,0.5)]')} />
-                                {alert.type}
+                            <TableCell className="px-5 py-3">
+                              <div className="flex items-center gap-2.5">
+                                <div className={cn("h-2 w-2 rounded-full flex-shrink-0", alert.type === 'fire' ? 'bg-orange-500' : alert.type === 'crime' ? 'bg-blue-500' : 'bg-red-500')} />
+                                <span className="text-sm font-bold text-white capitalize">{alert.type}</span>
                               </div>
                             </TableCell>
-                            <TableCell className="text-xs font-mono font-black text-slate-500">
-                              {alert.timestamp?.seconds ? format(alert.timestamp.toDate(), 'HH:mm:ss') : 'SYNCING'}
+                            <TableCell className="text-xs text-slate-500">
+                              {alert.timestamp?.seconds ? format(alert.timestamp.toDate(), 'MMM d, h:mm a') : '—'}
                             </TableCell>
-                            <TableCell className="px-10 text-right">
-                              <Badge variant="outline" className={cn(
-                                "font-black uppercase text-[10px] tracking-[0.3em] border-none px-4 py-2 rounded-xl",
-                                alert.status === 'pending' ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'
+                            <TableCell className="px-5 text-right">
+                              <Badge className={cn("text-[10px] font-bold border-none rounded-lg px-2 py-0.5",
+                                alert.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400' :
+                                alert.status === 'responding' ? 'bg-blue-500/10 text-blue-400' :
+                                alert.status === 'resolved' ? 'bg-green-500/10 text-green-400' :
+                                'bg-red-500/10 text-red-400'
                               )}>{alert.status}</Badge>
                             </TableCell>
                           </TableRow>
