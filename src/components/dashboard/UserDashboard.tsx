@@ -295,8 +295,8 @@ export function UserDashboard() {
   };
 
   const emergencyButtons = [
-    { type: 'fire' as const, color: 'bg-[#f97316]', icon: AlertTriangle, title: 'DRRM', subtitle: 'Disaster Risk Reduction' },
     { type: 'crime' as const, color: 'bg-[#2563eb]', icon: Shield, title: 'SECURITY', subtitle: 'School Security Office' },
+    { type: 'fire' as const, color: 'bg-[#f97316]', icon: AlertTriangle, title: 'DRRM', subtitle: 'Disaster Risk Reduction' },
     { type: 'medical' as const, color: 'bg-[#dc2626]', icon: Stethoscope, title: 'CLINIC', subtitle: 'School Medical Office' },
     { type: 'all' as const, color: 'bg-[#1e293b]', icon: AlertTriangle, title: 'ALL OFFICES', subtitle: 'Security + DRRM + Clinic' },
   ];
