@@ -5,16 +5,16 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
+  Flame,
   ShieldCheck,
+  HeartPulse,
   TriangleAlert,
-  Stethoscope,
   Home as HomeIcon,
   Map,
   ClipboardList,
   User,
   Download,
 } from 'lucide-react';
-import { SchoolSignInRequiredModal } from '@/components/SchoolSignInRequiredModal';
 import { OnboardingScreen, useOnboarding } from '@/components/OnboardingScreen';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -22,40 +22,39 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-// ─── School incident button data ──────────────────────────────────────────────
-
-const incidentTypes = [
+// ─── Emergency button data ────────────────────────────────────────────────────
+const emergencyTypes = [
   {
-    id: 'security' as const,
-    label: 'SECURITY',
-    subtitle: 'School Security Office',
+    id: 'fire',
+    label: 'FIRE',
+    subtitle: 'Bureau of Fire Protection',
+    icon: Flame,
+    bg: 'bg-gradient-to-br from-orange-500 to-orange-700',
+    shadow: 'shadow-[0_8px_40px_rgba(249,115,22,0.5)]',
+    hover: 'hover:brightness-110 hover:scale-[1.03]',
+  },
+  {
+    id: 'police',
+    label: 'POLICE',
+    subtitle: 'Philippine National Police',
     icon: ShieldCheck,
     bg: 'bg-gradient-to-br from-blue-500 to-blue-700',
     shadow: 'shadow-[0_8px_40px_rgba(59,130,246,0.5)]',
     hover: 'hover:brightness-110 hover:scale-[1.03]',
   },
   {
-    id: 'drrm' as const,
-    label: 'DRRM',
-    subtitle: 'Disaster Risk Reduction',
-    icon: TriangleAlert,
-    bg: 'bg-gradient-to-br from-orange-500 to-orange-700',
-    shadow: 'shadow-[0_8px_40px_rgba(249,115,22,0.5)]',
-    hover: 'hover:brightness-110 hover:scale-[1.03]',
-  },
-  {
-    id: 'clinic' as const,
-    label: 'CLINIC',
-    subtitle: 'School Medical Office',
-    icon: Stethoscope,
+    id: 'medical',
+    label: 'MEDICAL',
+    subtitle: 'Emergency Medical Services',
+    icon: HeartPulse,
     bg: 'bg-gradient-to-br from-rose-500 to-red-700',
     shadow: 'shadow-[0_8px_40px_rgba(244,63,94,0.5)]',
     hover: 'hover:brightness-110 hover:scale-[1.03]',
   },
   {
-    id: 'all' as const,
-    label: 'ALL OFFICES',
-    subtitle: 'Security + DRRM + Clinic',
+    id: 'all',
+    label: 'ALL AGENCIES',
+    subtitle: 'BFP + PNP + EMS',
     icon: TriangleAlert,
     bg: 'bg-gradient-to-br from-slate-600 to-slate-800',
     shadow: 'shadow-[0_8px_40px_rgba(100,116,139,0.35)]',
@@ -63,24 +62,70 @@ const incidentTypes = [
   },
 ] as const;
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
-export default function Home() {
+// ─── Sign-in required modal ───────────────────────────────────────────────────
+function SignInModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
   const router = useRouter();
+  if (!open) return null;
+  return (
+    <>
+      <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
+        <div className="w-full max-w-sm rounded-3xl bg-[hsl(222,47%,8%)] border border-white/10 shadow-2xl p-8 flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
+          <div className="w-16 h-16 rounded-2xl bg-red-500/20 border border-red-500/30 flex items-center justify-center mb-5">
+            <TriangleAlert className="h-8 w-8 text-red-400" strokeWidth={1.75} />
+          </div>
+          <h2 className="text-2xl font-black text-white mb-3">Sign In Required</h2>
+          <p className="text-sm text-slate-300 mb-1 leading-relaxed">
+            You need an account to report an emergency.
+          </p>
+          <p className="text-xs text-slate-500 mb-8">
+            Your GPS location will be captured automatically after sign in.
+          </p>
+          <div className="flex gap-3 w-full mb-4">
+            <button
+              onClick={onClose}
+              className="flex-1 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => router.push('/auth')}
+              className="flex-1 py-3.5 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm transition-colors shadow-[0_4px_16px_rgba(220,38,38,0.4)]"
+            >
+              Sign In
+            </button>
+          </div>
+          <p className="text-xs text-slate-400">
+            No account?{' '}
+            <button
+              onClick={() => router.push('/auth?tab=register')}
+              className="text-red-400 hover:text-red-300 font-semibold transition-colors"
+            >
+              Register free
+            </button>
+          </p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+export default function Home() {
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedType, setSelectedType] = useState<'security' | 'drrm' | 'clinic' | 'all' | null>(null);
   const { show: showOnboarding, done: onboardingDone } = useOnboarding();
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true);
-    }
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setInstallPrompt(e as BeforeInstallPromptEvent);
-    };
+    if (window.matchMedia('(display-mode: standalone)').matches) setIsInstalled(true);
+    const handler = (e: Event) => { e.preventDefault(); setInstallPrompt(e as BeforeInstallPromptEvent); };
     window.addEventListener('beforeinstallprompt', handler);
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
@@ -93,49 +138,37 @@ export default function Home() {
     setInstallPrompt(null);
   };
 
-  const handleIncidentTap = (type: 'security' | 'drrm' | 'clinic' | 'all') => {
-    setSelectedType(type);
-    setModalOpen(true);
-  };
-
-  const handleSosPress = () => {
-    setSelectedType('all');
-    setModalOpen(true);
-  };
-
   return (
     <div className="relative flex flex-col min-h-screen bg-[#020617] text-foreground overflow-hidden">
       {/* Onboarding */}
       {showOnboarding && <OnboardingScreen onDone={onboardingDone} />}
 
-      {/* Background glow — blue tint for school theme */}
+      {/* Background glow */}
       <div
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 z-0"
         style={{
           background:
-            'radial-gradient(ellipse 70% 50% at 50% 30%, rgba(59,130,246,0.15) 0%, rgba(10,30,80,0.07) 55%, transparent 80%)',
+            'radial-gradient(ellipse 70% 50% at 50% 30%, rgba(220,38,38,0.13) 0%, rgba(80,10,10,0.06) 55%, transparent 80%)',
         }}
       />
 
       {/* ── Navbar ─────────────────────────────────────────────────────────── */}
       <header className="relative z-20 sticky top-0 flex items-center justify-between px-4 sm:px-6 lg:px-10 h-16 border-b border-white/5 bg-[#020617]/80 backdrop-blur-xl">
-        {/* Brand */}
         <div className="flex items-center gap-3 min-w-0">
-          <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-lg overflow-hidden shadow-lg shadow-blue-900/40">
+          <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-lg overflow-hidden shadow-lg shadow-red-900/40">
             <img src="/icons/logo.png" alt="Logo" className="w-full h-full object-cover" />
           </div>
           <div className="min-w-0">
-            <p className="text-base font-bold leading-tight tracking-tight truncate">
-              School Emergency
+            <p className="text-base font-bold leading-tight tracking-tight truncate text-white">
+              Emergency Hotline
             </p>
             <p className="hidden xl:block text-[10px] text-muted-foreground leading-tight tracking-wide truncate">
-              School Incident Reporting System
+              Smart Multi-Emergency Alarm System
             </p>
           </div>
         </div>
 
-        {/* Auth actions */}
         <nav className="flex items-center gap-2 flex-shrink-0">
           {installPrompt && !isInstalled && (
             <Button
@@ -159,7 +192,7 @@ export default function Home() {
           <Link href="/auth?tab=register">
             <Button
               size="sm"
-              className="h-9 px-5 text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white border-0 shadow-lg shadow-blue-900/30"
+              className="h-9 px-5 text-sm font-semibold bg-red-600 hover:bg-red-500 text-white border-0 shadow-lg shadow-red-900/30"
             >
               Register
             </Button>
@@ -169,34 +202,47 @@ export default function Home() {
 
       {/* ── Main content ───────────────────────────────────────────────────── */}
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-5 pt-8 pb-28 xl:pb-12">
-        {/* Pill badge */}
-        <div className="flex items-center gap-2 mb-8 px-5 py-2 rounded-full border border-blue-800/60 bg-blue-950/40">
+        {/* Live badge */}
+        <div className="flex items-center gap-2 mb-8 px-5 py-2 rounded-full border border-red-800/60 bg-red-950/40">
           <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
           </span>
           <span className="text-sm text-white/80 font-medium whitespace-nowrap">
-            Tap any button to report an incident
+            Tap any button to report an emergency
           </span>
         </div>
 
         {/* Heading */}
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-center mb-3 leading-tight">
-          Report Incident
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-center mb-3 leading-tight text-white">
+          Report Emergency
         </h1>
 
         {/* Subtitle */}
         <p className="text-sm sm:text-base text-muted-foreground text-center max-w-xs sm:max-w-sm mb-10 leading-relaxed">
-          Select the type of incident — you&apos;ll be asked to sign in first.
+          Select the type of emergency — you&apos;ll be asked to sign in first.
         </p>
 
-        {/* Incident grid */}
+        {/* Agency dots */}
+        <div className="flex items-center gap-5 text-xs text-muted-foreground mb-8">
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-orange-500 inline-block" />BFP
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-blue-500 inline-block" />PNP
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-red-500 inline-block" />EMS
+          </span>
+        </div>
+
+        {/* Emergency grid */}
         <div className="grid grid-cols-2 gap-3 w-full max-w-[420px] sm:max-w-md lg:max-w-xl">
-          {incidentTypes.map(({ id, label, subtitle, icon: Icon, bg, shadow, hover }) => (
+          {emergencyTypes.map(({ id, label, subtitle, icon: Icon, bg, shadow, hover }) => (
             <button
               key={id}
-              onClick={() => handleIncidentTap(id)}
-              aria-label={`Report ${label} incident`}
+              onClick={() => setModalOpen(true)}
+              aria-label={`Report ${label} emergency`}
               className={`
                 group relative flex flex-col items-center justify-center gap-3
                 rounded-2xl cursor-pointer select-none aspect-square
@@ -215,15 +261,15 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Inline auth links */}
+        {/* Auth links */}
         <p className="mt-8 text-xs text-muted-foreground text-center">
           Already have an account?{' '}
-          <Link href="/auth" className="text-blue-400 hover:text-blue-300 font-semibold">
+          <Link href="/auth" className="text-red-400 hover:text-red-300 font-semibold">
             Sign in
           </Link>
           {' · '}
           New here?{' '}
-          <Link href="/auth?tab=register" className="text-blue-400 hover:text-blue-300 font-semibold">
+          <Link href="/auth?tab=register" className="text-red-400 hover:text-red-300 font-semibold">
             Register
           </Link>
         </p>
@@ -231,44 +277,41 @@ export default function Home() {
 
       {/* ── Desktop footer ──────────────────────────────────────────────────── */}
       <footer className="relative z-10 hidden xl:flex items-center justify-between px-6 lg:px-10 py-4 border-t border-white/5 bg-[#020617]/60 backdrop-blur-sm text-[11px] text-muted-foreground">
-        <span>School Emergency — School Incident Reporting System</span>
+        <span>Emergency Hotline — Smart Multi-Emergency Alarm System</span>
         <span>© 2026 · Mindoro State University</span>
       </footer>
 
-      {/* ── Mobile/Tablet bottom navigation ────────────────────────────────── */}
+      {/* ── Mobile bottom navigation ────────────────────────────────────────── */}
       <nav
         aria-label="Mobile navigation"
         className="xl:hidden fixed bottom-0 inset-x-0 z-30 bg-[hsl(222,47%,6%)] border-t border-white/10"
         style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0px)' }}
       >
         <div className="relative flex items-end justify-around h-[60px] px-4">
-
-          {/* Home */}
           <Link
             href="/"
-            className="flex flex-col items-center justify-center gap-1 flex-1 h-full text-white/60 hover:text-white transition-colors"
+            className="flex flex-col items-center justify-center gap-1 flex-1 h-full text-white hover:text-white transition-colors"
             aria-current="page"
           >
             <HomeIcon className="h-[22px] w-[22px]" strokeWidth={1.5} />
             <span className="text-[10px] font-medium tracking-wide">Home</span>
           </Link>
 
-          {/* Map */}
           <Link
-            href="/auth"
+            href="/map"
             className="flex flex-col items-center justify-center gap-1 flex-1 h-full text-white/40 hover:text-white/60 transition-colors"
           >
             <Map className="h-[22px] w-[22px]" strokeWidth={1.5} />
             <span className="text-[10px] font-medium tracking-wide">Map</span>
           </Link>
 
-          {/* SOS — elevated center button */}
+          {/* SOS center button */}
           <div className="flex flex-col items-center justify-end flex-1 pb-2 relative">
             <div className="absolute bottom-[calc(100%-12px)] flex flex-col items-center">
               <button
-                onClick={handleSosPress}
-                aria-label="SOS — report incident"
-                className="flex items-center justify-center w-[58px] h-[58px] rounded-full bg-blue-600 shadow-[0_0_24px_6px_rgba(59,130,246,0.5)] hover:bg-blue-500 active:scale-95 transition-all duration-150"
+                onClick={() => setModalOpen(true)}
+                aria-label="SOS — report emergency"
+                className="flex items-center justify-center w-[58px] h-[58px] rounded-full bg-red-600 shadow-[0_0_24px_6px_rgba(220,38,38,0.5)] hover:bg-red-500 active:scale-95 transition-all duration-150"
               >
                 <TriangleAlert className="h-7 w-7 text-white" strokeWidth={2} />
               </button>
@@ -276,7 +319,6 @@ export default function Home() {
             <span className="text-[10px] font-medium text-white/40 tracking-wide">SOS</span>
           </div>
 
-          {/* History */}
           <Link
             href="/auth"
             className="flex flex-col items-center justify-center gap-1 flex-1 h-full text-white/40 hover:text-white/60 transition-colors"
@@ -285,7 +327,6 @@ export default function Home() {
             <span className="text-[10px] font-medium tracking-wide">History</span>
           </Link>
 
-          {/* Profile */}
           <Link
             href="/auth"
             className="flex flex-col items-center justify-center gap-1 flex-1 h-full text-white/40 hover:text-white/60 transition-colors"
@@ -293,16 +334,11 @@ export default function Home() {
             <User className="h-[22px] w-[22px]" strokeWidth={1.5} />
             <span className="text-[10px] font-medium tracking-wide">Profile</span>
           </Link>
-
         </div>
       </nav>
 
       {/* Sign In Required Modal */}
-      <SchoolSignInRequiredModal
-        open={modalOpen}
-        incidentType={selectedType}
-        onClose={() => setModalOpen(false)}
-      />
+      <SignInModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </div>
   );
 }
