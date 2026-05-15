@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { collection, doc, setDoc, writeBatch, query, orderBy, serverTimestamp as firestoreTimestamp, updateDoc } from 'firebase/firestore';
 import { ref, push, serverTimestamp as rtdbTimestamp } from 'firebase/database';
 import { useFirestore, useCollection, useDatabase, useMemoFirebase } from '@/firebase';
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Flame, Shield, Activity, AlertTriangle, Star, Zap, Info, Radio, Menu, MapPin, Clock, Loader2, Navigation, ClipboardList, Camera, Bell, BellOff, X } from 'lucide-react';
+import { Flame, Shield, Activity, AlertTriangle, Star, Zap, Info, Radio, Menu, MapPin, Clock, Loader2, Navigation, ClipboardList, Camera, Bell, BellOff, X, Mic, MicOff, Square } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -58,6 +58,10 @@ export function UserDashboard() {
   const [mapMounted, setMapMounted] = useState(false);
   const [manualLocation, setManualLocation] = useState('');
   const [photoEvidence, setPhotoEvidence] = useState<File | null>(null);
+  const [voiceNote, setVoiceNote] = useState<string | null>(null); // base64 audio
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
     try {
@@ -75,6 +79,32 @@ export function UserDashboard() {
   useEffect(() => {
     setMapMounted(true);
   }, []);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      mr.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      mr.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.onload = () => setVoiceNote(reader.result as string);
+        reader.readAsDataURL(blob);
+        stream.getTracks().forEach(t => t.stop());
+      };
+      mr.start();
+      mediaRecorderRef.current = mr;
+      setIsRecording(true);
+    } catch {
+      toast({ variant: 'destructive', title: 'Microphone access denied', description: 'Allow microphone to record voice note.' });
+    }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+  };
 
   const [easeOfUse, setEaseOfUse] = useState([3]);
   const [reliability, setReliability] = useState([3]);
@@ -158,12 +188,12 @@ export function UserDashboard() {
 
     const alertId = doc(collection(db, 'temp')).id;
 
-    // Upload photo evidence as base64 if provided
+    // Upload photo evidence as base64 if provided — compress aggressively to stay under Firestore 1MB limit
     let photoEvidenceUrl: string | null = null;
     if (photoEvidence) {
       try {
         const { resizeImageToBase64 } = await import('@/lib/resize-image');
-        photoEvidenceUrl = await resizeImageToBase64(photoEvidence, 800, 0.8);
+        photoEvidenceUrl = await resizeImageToBase64(photoEvidence, 400, 0.55);
       } catch {
         toast({ variant: 'destructive', title: 'Photo upload failed', description: 'Alert sent without photo.' });
       }
@@ -183,6 +213,7 @@ export function UserDashboard() {
       status: 'pending' as const,
       timestamp: firestoreTimestamp(),
       ...(photoEvidenceUrl ? { photoEvidenceUrl } : {}),
+      ...(voiceNote ? { voiceNoteUrl: voiceNote } : {}),
     };
 
     const batch = writeBatch(db);
@@ -1145,7 +1176,7 @@ export function UserDashboard() {
           )}
 
           {/* ── Step 1: Alert Detail Dialog ──────────────────────────────── */}
-          <AlertDialog open={confirmOpen} onOpenChange={(open) => { if (!open) { setConfirmOpen(false); setSelectedType(null); setManualLocation(''); setPhotoEvidence(null); } }}>
+          <AlertDialog open={confirmOpen} onOpenChange={(open) => { if (!open) { setConfirmOpen(false); setSelectedType(null); setManualLocation(''); setPhotoEvidence(null); setVoiceNote(null); if (isRecording) stopRecording(); } }}>
             <AlertDialogContent className="bg-[#0d1526] border border-white/10 rounded-3xl p-0 max-w-sm w-full overflow-hidden shadow-2xl">
               <AlertDialogHeader className="sr-only">
                 <AlertDialogTitle>Report Emergency</AlertDialogTitle>
@@ -1281,6 +1312,37 @@ export function UserDashboard() {
                   </label>
                   {!photoEvidence && (
                     <p className="text-[10px] text-red-400 text-center font-semibold">Photo is required to verify your report</p>
+                  )}
+                </div>
+
+                {/* Voice note — optional */}
+                <div className="space-y-1">
+                  {voiceNote ? (
+                    <div className="rounded-xl bg-slate-800/60 border border-white/10 p-3 flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                        <Mic className="h-4 w-4 text-green-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-green-400">Voice note recorded ✓</p>
+                        <audio src={voiceNote} controls className="w-full h-7 mt-1" />
+                      </div>
+                      <button onClick={() => setVoiceNote(null)} className="text-slate-500 hover:text-red-400 transition-colors flex-shrink-0">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={isRecording ? stopRecording : startRecording}
+                      className={cn(
+                        "w-full flex items-center justify-center gap-2 h-12 rounded-xl border-2 text-sm font-semibold transition-colors",
+                        isRecording
+                          ? "border-red-500/60 bg-red-500/10 text-red-400 animate-pulse"
+                          : "border-dashed border-white/20 bg-white/5 text-slate-400 hover:border-white/30 hover:text-white"
+                      )}
+                    >
+                      {isRecording ? <><Square className="h-4 w-4" /> Stop Recording</> : <><Mic className="h-4 w-4" /> Add Voice Note (Optional)</>}
+                    </button>
                   )}
                 </div>
 

@@ -304,6 +304,16 @@ export function MedicalDashboard() {
                         </div>
                       )}
 
+                      {/* Voice Note */}
+                      {(alert as any).voiceNoteUrl && (
+                        <div className="mb-4 rounded-xl border border-white/10 bg-slate-800/60 overflow-hidden">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 py-2 border-b border-white/5">Voice Note</p>
+                          <div className="px-3 py-2">
+                            <audio src={(alert as any).voiceNoteUrl} controls className="w-full h-8" />
+                          </div>
+                        </div>
+                      )}
+
                       {alert.responderName && (
                         <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20">
                           <User className="h-3.5 w-3.5 text-blue-400" />
