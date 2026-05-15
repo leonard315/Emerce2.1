@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Flame, ShieldCheck, HeartPulse, TriangleAlert, AlertOctagon, ChevronRight, X } from 'lucide-react';
+import { ShieldCheck, HeartPulse, TriangleAlert, AlertOctagon, ChevronRight, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const ONBOARDING_KEY = 'eh_onboarded_v1';
@@ -17,15 +17,15 @@ const slides = [
   {
     icon: (
       <div className="grid grid-cols-2 gap-3">
-        <div className="h-14 w-14 rounded-2xl bg-orange-500/20 flex items-center justify-center"><Flame className="h-7 w-7 text-orange-400" /></div>
         <div className="h-14 w-14 rounded-2xl bg-blue-500/20 flex items-center justify-center"><ShieldCheck className="h-7 w-7 text-blue-400" /></div>
+        <div className="h-14 w-14 rounded-2xl bg-orange-500/20 flex items-center justify-center"><TriangleAlert className="h-7 w-7 text-orange-400" /></div>
         <div className="h-14 w-14 rounded-2xl bg-red-500/20 flex items-center justify-center"><HeartPulse className="h-7 w-7 text-red-400" /></div>
         <div className="h-14 w-14 rounded-2xl bg-slate-500/20 flex items-center justify-center"><TriangleAlert className="h-7 w-7 text-slate-400" /></div>
       </div>
     ),
-    title: 'Four Emergency Types',
-    subtitle: 'Fire · Police · Medical · All Agencies',
-    body: 'Tap the matching button to alert the Bureau of Fire Protection (BFP), Philippine National Police (PNP), Emergency Medical Services (EMS), or all agencies at once.',
+    title: 'Four Incident Types',
+    subtitle: 'Security · DRRM · Clinic · All Offices',
+    body: 'Tap the matching button to alert the School Security Office, DRRM (Disaster Risk Reduction), School Clinic, or all offices at once.',
     accent: 'from-red-600 to-red-900',
   },
   {

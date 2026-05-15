@@ -579,7 +579,33 @@ export function AdminDashboard() {
           {/* ── Alerts view ──────────────────────────────────────────────── */}
           {currentView === "alerts" && (
             <div className="space-y-4 w-full">
-              <h1 className="text-2xl font-black text-white">Manage Alerts</h1>
+              <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-black text-white">Manage Alerts</h1>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 border-red-900/50 text-red-400 hover:bg-red-950/40 hover:border-red-500/50 gap-2"
+                  onClick={async () => {
+                    if (!db) return;
+                    const toDelete = alerts.filter(a => a.status === 'resolved' || a.status === 'false_report');
+                    if (toDelete.length === 0) { toast({ title: 'No resolved alerts to delete' }); return; }
+                    try {
+                      const { deleteDoc: dd } = await import('firebase/firestore');
+                      await Promise.all(toDelete.map(a => Promise.all([
+                        dd(doc(db, 'all_alerts', a.id)).catch(() => {}),
+                        dd(doc(db, 'agency_alerts_fire', a.id)).catch(() => {}),
+                        dd(doc(db, 'agency_alerts_police', a.id)).catch(() => {}),
+                        dd(doc(db, 'agency_alerts_medical', a.id)).catch(() => {}),
+                      ])));
+                      toast({ title: `Deleted ${toDelete.length} resolved/false alerts` });
+                    } catch (e: any) {
+                      toast({ variant: 'destructive', title: 'Delete failed', description: e.message });
+                    }
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Clear Resolved
+                </Button>
+              </div>
               <Card className="bg-slate-900/60 border-white/5 rounded-2xl overflow-hidden w-full">
                 {/* Mobile card list */}
                 <div className="md:hidden divide-y divide-white/5">

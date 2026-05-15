@@ -47,7 +47,7 @@ function MapUpdater({ alerts }: { alerts: Alert[] }) {
     if (first?.location) {
       map.setView([first.location.lat, first.location.lng], 13, { animate: true });
     }
-  }, [alerts.length]);
+  }, [alerts.map(a => a.id).join(',')]); // re-center whenever alert list changes
   return null;
 }
 

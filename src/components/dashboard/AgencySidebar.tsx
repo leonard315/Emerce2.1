@@ -37,8 +37,8 @@ interface AgencySidebarProps {
 
 const agencyConfig = {
   fire: {
-    label: "BFP Fire Agency",
-    subtitle: "Bureau of Fire Protection",
+    label: "DRRM Office",
+    subtitle: "Disaster Risk Reduction",
     icon: Flame,
     color: "text-orange-500",
     activeBg: "bg-orange-950/20 border border-orange-500/10",
@@ -46,8 +46,8 @@ const agencyConfig = {
     headerBg: "bg-orange-600/10",
   },
   police: {
-    label: "Police Agency",
-    subtitle: "Philippine National Police",
+    label: "Security Office",
+    subtitle: "School Security Department",
     icon: ShieldCheck,
     color: "text-blue-500",
     activeBg: "bg-blue-950/20 border border-blue-500/10",
@@ -55,8 +55,8 @@ const agencyConfig = {
     headerBg: "bg-blue-600/10",
   },
   medical: {
-    label: "Medical Agency",
-    subtitle: "Emergency Medical Services",
+    label: "School Clinic",
+    subtitle: "School Medical Office",
     icon: HeartPulse,
     color: "text-red-500",
     activeBg: "bg-red-950/20 border border-red-500/10",

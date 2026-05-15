@@ -229,8 +229,8 @@ export function PoliceDashboard() {
                   <ShieldCheck className="h-6 w-6 text-blue-500" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-black text-white tracking-tight">Police Agency Dashboard</h1>
-                  <p className="text-xs text-slate-400 mt-0.5">Philippine National Police — Real-time incident management</p>
+                  <h1 className="text-2xl font-black text-white tracking-tight">Security Dashboard</h1>
+                  <p className="text-xs text-slate-400 mt-0.5">School Security Department — Real-time incident management</p>
                 </div>
               </div>
               <AlertSoundButton
@@ -257,7 +257,7 @@ export function PoliceDashboard() {
               ))}
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="xl:col-span-2 space-y-4">
                 {isLoading ? (
                   <div className="flex items-center justify-center py-24">

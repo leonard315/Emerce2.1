@@ -238,8 +238,8 @@ export function FireDashboard() {
                   <Flame className="h-6 w-6 text-orange-500" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-black text-white tracking-tight">BFP Fire Agency Dashboard</h1>
-                  <p className="text-xs text-slate-400 mt-0.5">Bureau of Fire Protection — Real-time incident management</p>
+                  <h1 className="text-2xl font-black text-white tracking-tight">DRRM Dashboard</h1>
+                  <p className="text-xs text-slate-400 mt-0.5">Disaster Risk Reduction — Real-time incident management</p>
                 </div>
               </div>
               <AlertSoundButton
@@ -268,7 +268,7 @@ export function FireDashboard() {
             </div>
 
             {/* Main grid */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
               {/* Alert list */}
               <div className="xl:col-span-2 space-y-4">
