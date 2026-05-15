@@ -1,0 +1,279 @@
+
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the GuardianLink system, including their identity, contact information, and assigned role.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The full name of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the user, used for authentication and contact.",
+          "format": "email"
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the user within the system, defining their access privileges (admin, general, fire, police, medical).",
+          "format": "enum",
+          "items": {
+            "type": "string"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user account was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "email",
+        "role",
+        "createdAt"
+      ]
+    },
+    "Alert": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Alert",
+      "type": "object",
+      "description": "Represents an emergency alert triggered by a general user, including its type, location, status, and associated agency.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Alert entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who triggered this alert. (Relationship: User 1:N Alert)"
+        },
+        "userName": {
+          "type": "string",
+          "description": "The name of the user who triggered the alert."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of emergency reported (e.g., Fire, Crime, Medical).",
+          "format": "enum",
+          "items": {
+            "type": "string"
+          }
+        },
+        "color": {
+          "type": "string",
+          "description": "The color code associated with the emergency type.",
+          "format": "enum",
+          "items": {
+            "type": "string"
+          }
+        },
+        "location": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" }
+          }
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the alert (e.g., Pending, Responding, Resolved).",
+          "format": "enum",
+          "items": {
+            "type": "string"
+          }
+        },
+        "timestamp": {
+          "type": "object",
+          "description": "Firestore server timestamp."
+        },
+        "responderId": {
+          "type": "string",
+          "description": "Reference to the User who accepted the alert."
+        },
+        "responderName": {
+          "type": "string",
+          "description": "Name of the responder."
+        },
+        "responseStartTime": {
+          "type": "object"
+        },
+        "resolvedTime": {
+          "type": "object"
+        },
+        "aiAnalysis": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "userName",
+        "type",
+        "status"
+      ]
+    },
+    "Log": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Log",
+      "type": "object",
+      "description": "Records system activities and user actions.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "userName": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "id",
+        "action",
+        "timestamp"
+      ]
+    },
+    "QuestionnaireResponse": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "QuestionnaireResponse",
+      "type": "object",
+      "description": "Stores user feedback collected via questionnaires.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "easeOfUse": {
+          "type": "number"
+        },
+        "reliability": {
+          "type": "number"
+        },
+        "comments": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "easeOfUse",
+        "reliability",
+        "timestamp"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": { "$ref": "#/backend/entities/User" },
+          "description": "User profiles and roles."
+        }
+      },
+      {
+        "path": "/roles_admin/{uid}",
+        "definition": { "entityName": "User", "description": "Admin role check." }
+      },
+      {
+        "path": "/roles_general_users/{uid}",
+        "definition": { "entityName": "User", "description": "General user role check." }
+      },
+      {
+        "path": "/roles_fire_agency/{uid}",
+        "definition": { "entityName": "User", "description": "Fire agency role check." }
+      },
+      {
+        "path": "/roles_police_agency/{uid}",
+        "definition": { "entityName": "User", "description": "Police agency role check." }
+      },
+      {
+        "path": "/roles_medical_agency/{uid}",
+        "definition": { "entityName": "User", "description": "Medical agency role check." }
+      },
+      {
+        "path": "/users/{userId}/alerts/{alertId}",
+        "definition": {
+          "entityName": "Alert",
+          "schema": { "$ref": "#/backend/entities/Alert" },
+          "description": "User's own alert history."
+        }
+      },
+      {
+        "path": "/agency_alerts_fire/{alertId}",
+        "definition": {
+          "entityName": "Alert",
+          "schema": { "$ref": "#/backend/entities/Alert" },
+          "description": "Alerts assigned to fire agency."
+        }
+      },
+      {
+        "path": "/agency_alerts_police/{alertId}",
+        "definition": {
+          "entityName": "Alert",
+          "schema": { "$ref": "#/backend/entities/Alert" },
+          "description": "Alerts assigned to police agency."
+        }
+      },
+      {
+        "path": "/agency_alerts_medical/{alertId}",
+        "definition": {
+          "entityName": "Alert",
+          "schema": { "$ref": "#/backend/entities/Alert" },
+          "description": "Alerts assigned to medical agency."
+        }
+      },
+      {
+        "path": "/all_alerts/{alertId}",
+        "definition": {
+          "entityName": "Alert",
+          "schema": { "$ref": "#/backend/entities/Alert" },
+          "description": "Master list of all alerts."
+        }
+      },
+      {
+        "path": "/users/{userId}/questionnaire_responses/{responseId}",
+        "definition": {
+          "entityName": "QuestionnaireResponse",
+          "schema": { "$ref": "#/backend/entities/QuestionnaireResponse" },
+          "description": "User's own feedback responses."
+        }
+      },
+      {
+        "path": "/all_questionnaire_responses/{responseId}",
+        "definition": {
+          "entityName": "QuestionnaireResponse",
+          "schema": { "$ref": "#/backend/entities/QuestionnaireResponse" },
+          "description": "Master list of all feedback."
+        }
+      }
+    ]
+  }
+}

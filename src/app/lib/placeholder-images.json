@@ -1,0 +1,23 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "hero-emergency",
+      "description": "Emergency services abstract representation",
+      "imageUrl": "https://picsum.photos/seed/emergency1/1200/800",
+      "imageHint": "emergency ambulance"
+    },
+    {
+      "id": "user-avatar",
+      "description": "Default user avatar",
+      "imageUrl": "https://picsum.photos/seed/avatar1/200/200",
+      "imageHint": "professional person"
+    },
+    {
+      "id": "satellite-map",
+      "description": "Satellite tactical map view",
+      "imageUrl": "https://picsum.photos/seed/satellite7/1600/1200",
+      "imageHint": "satellite city"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="#dc2626"/>
+  <!-- Triangle alert icon -->
+  <path d="M256 120 L420 390 H92 Z" fill="none" stroke="white" stroke-width="32" stroke-linejoin="round"/>
+  <circle cx="256" cy="340" r="18" fill="white"/>
+  <rect x="240" y="220" width="32" height="90" rx="8" fill="white"/>
+</svg>

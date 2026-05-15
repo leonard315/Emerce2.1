@@ -1,0 +1,152 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper functions ────────────────────────────────────────────────────
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    function isFireAgency() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_fire_agency/$(request.auth.uid));
+    }
+
+    function isPoliceAgency() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_police_agency/$(request.auth.uid));
+    }
+
+    function isMedicalAgency() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_medical_agency/$(request.auth.uid));
+    }
+
+    function isAnyAgency() {
+      return isFireAgency() || isPoliceAgency() || isMedicalAgency();
+    }
+
+    // ── User profiles ───────────────────────────────────────────────────────
+
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Role collections ────────────────────────────────────────────────────
+
+    match /roles_admin/{uid} {
+      allow get: if isSignedIn();
+      allow create: if isOwner(uid);
+      allow update, delete: if isAdmin();
+    }
+
+    match /roles_general_users/{uid} {
+      allow get: if isSignedIn();
+      allow create: if isOwner(uid);
+      allow update, delete: if isAdmin();
+    }
+
+    match /roles_fire_agency/{uid} {
+      allow get: if isSignedIn();
+      allow create: if isOwner(uid);
+      allow update, delete: if isAdmin();
+    }
+
+    match /roles_police_agency/{uid} {
+      allow get: if isSignedIn();
+      allow create: if isOwner(uid);
+      allow update, delete: if isAdmin();
+    }
+
+    match /roles_medical_agency/{uid} {
+      allow get: if isSignedIn();
+      allow create: if isOwner(uid);
+      allow update, delete: if isAdmin();
+    }
+
+    // ── User alerts (subcollection) ─────────────────────────────────────────
+
+    match /users/{userId}/alerts/{alertId} {
+      allow get, list: if isOwner(userId) || isAdmin() || isAnyAgency();
+      allow create: if isOwner(userId);
+      // Owner can update their own alert; agencies and admin can update status/responder fields
+      allow update: if isOwner(userId) || isAdmin() || isAnyAgency();
+    }
+
+    // ── Agency alert queues ─────────────────────────────────────────────────
+
+    match /agency_alerts_fire/{alertId} {
+      allow create: if isSignedIn();
+      allow read, list: if isAdmin() || isFireAgency();
+      allow update: if isAdmin() || isFireAgency();
+      allow delete: if isAdmin();
+    }
+
+    match /agency_alerts_police/{alertId} {
+      allow create: if isSignedIn();
+      allow read, list: if isAdmin() || isPoliceAgency();
+      allow update: if isAdmin() || isPoliceAgency();
+      allow delete: if isAdmin();
+    }
+
+    match /agency_alerts_medical/{alertId} {
+      allow create: if isSignedIn();
+      allow read, list: if isAdmin() || isMedicalAgency();
+      allow update: if isAdmin() || isMedicalAgency();
+      allow delete: if isAdmin();
+    }
+
+    // ── All alerts (admin + agency read, anyone can create) ─────────────────
+
+    match /all_alerts/{alertId} {
+      allow create: if isSignedIn();
+      // Any signed-in user can read all_alerts (needed for live map and user history)
+      allow get, list: if isSignedIn();
+      // Only agencies and admin can update status
+      allow update: if isAdmin() || isAnyAgency();
+      allow delete: if isAdmin();
+    }
+
+    // ── Feedback / questionnaire ────────────────────────────────────────────
+
+    match /users/{userId}/questionnaire_responses/{responseId} {
+      allow get, list: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+    }
+
+    match /all_questionnaire_responses/{responseId} {
+      allow create: if isSignedIn();
+      allow read, list: if isAdmin();
+    }
+
+    // ── Admin settings ──────────────────────────────────────────────────────
+
+    match /admin_settings/{uid} {
+      allow read, write: if isAdmin() && isOwner(uid);
+    }
+
+    // ── Security logs ────────────────────────────────────────────────────────
+
+    match /security_logs/{logId} {
+      allow create: if isSignedIn();
+      allow read, list: if isAdmin();
+    }
+
+    // ── Logs ────────────────────────────────────────────────────────────────
+
+    match /logs/{logId} {
+      allow create: if isSignedIn();
+      allow read, list: if isAdmin();
+    }
+  }
+}
