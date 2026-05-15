@@ -339,14 +339,15 @@ export function PoliceDashboard() {
                         </div>
                         {/* Photo */}
                         {photo && (
-                          <div className="rounded-xl overflow-hidden border border-white/10">
-                            <div className="flex items-center justify-between px-3 py-2 bg-slate-800/60 border-b border-white/5">
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Photo Evidence</p>
-                              <a href={photo} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-400 hover:text-blue-300 font-semibold">View full →</a>
-                            </div>
-                            <a href={photo} target="_blank" rel="noopener noreferrer">
-                              <img src={photo} alt="Photo evidence" className="w-full max-h-48 object-cover hover:opacity-90 transition-opacity cursor-zoom-in" />
+                          <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-800/50 border border-white/10">
+                            <a href={photo} target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
+                              <img src={photo} alt="Evidence" className="h-12 w-12 rounded-lg object-cover border border-white/10 hover:opacity-80 transition-opacity cursor-zoom-in" />
                             </a>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Photo Evidence</p>
+                              <p className="text-xs text-slate-500 mt-0.5 truncate">Tap thumbnail to view full size</p>
+                            </div>
+                            <a href={photo} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-blue-400 hover:text-blue-300 shrink-0 transition-colors">View →</a>
                           </div>
                         )}
                         {/* Voice */}
