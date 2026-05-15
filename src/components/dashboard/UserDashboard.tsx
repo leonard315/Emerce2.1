@@ -425,7 +425,7 @@ export function UserDashboard() {
               {/* Emergency type label */}
               <div className="flex items-center gap-2 px-1">
                 <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Select Emergency Type</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Select Incident Type</span>
               </div>
 
               {/* 2x2 grid */}
@@ -450,15 +450,16 @@ export function UserDashboard() {
                     }}
                     disabled={isSubmitting || isDeactivated}
                     className={cn(
-                      "h-40 rounded-3xl flex flex-col items-center justify-center gap-3 transition-all active:scale-95",
-                      btn.color, "shadow-xl border-none",
+                      "group relative aspect-square rounded-3xl flex flex-col items-center justify-center gap-3 transition-all active:scale-95 overflow-hidden",
+                      btn.color,
                       isDeactivated && "opacity-40 cursor-not-allowed"
                     )}
                   >
-                    <btn.icon className="h-10 w-10 text-white" />
-                    <div className="text-center">
-                      <span className="text-base font-black block text-white tracking-wide italic">{btn.title}</span>
-                      <span className="text-[9px] font-bold block text-white/70 uppercase tracking-wider">{btn.subtitle}</span>
+                    <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <btn.icon className="h-10 w-10 text-white relative z-10" strokeWidth={1.5} />
+                    <div className="text-center relative z-10 px-3">
+                      <span className="text-base font-black block text-white tracking-widest leading-none">{btn.title}</span>
+                      <span className="text-[10px] font-medium block text-white/70 mt-1">{btn.subtitle}</span>
                     </div>
                   </button>
                 ))}
