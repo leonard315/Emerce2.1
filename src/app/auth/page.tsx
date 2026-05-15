@@ -7,7 +7,7 @@ import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
 } from 'firebase/auth';
-import { doc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { doc, writeBatch, serverTimestamp, getDoc } from 'firebase/firestore';
 import { useAuth as useFirebaseHooks, useFirestore } from '@/firebase';
 import { setLoginTimestamp } from '@/firebase';
 import { Input } from "@/components/ui/input";
@@ -184,7 +184,21 @@ function AuthContent() {
     e.preventDefault();
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      // Check if account is deactivated
+      const userSnap = await getDoc(doc(db, 'users', cred.user.uid));
+      if (userSnap.exists() && userSnap.data()?.isDeactivated) {
+        // Sign them back out immediately
+        await cred.user.reload(); // ensure fresh state
+        const { signOut } = await import('firebase/auth');
+        await signOut(auth);
+        toast({
+          variant: 'destructive',
+          title: 'Account Deactivated',
+          description: 'Your account has been deactivated due to false emergency reports. Please contact the administrator to appeal.',
+        });
+        return;
+      }
       setLoginTimestamp(); // record login time for 7-day session
       router.push('/dashboard');
     } catch (error: any) {

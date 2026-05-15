@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { collection, doc, setDoc, writeBatch, query, orderBy, serverTimestamp as firestoreTimestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, writeBatch, query, orderBy, serverTimestamp as firestoreTimestamp, updateDoc } from 'firebase/firestore';
 import { ref, push, serverTimestamp as rtdbTimestamp } from 'firebase/database';
 import { useFirestore, useCollection, useDatabase, useMemoFirebase } from '@/firebase';
-import { EmergencyAlert, EmergencyType } from '@/lib/types';
+import { EmergencyAlert, EmergencyType, UserNotification } from '@/lib/types';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Flame, Shield, Activity, AlertTriangle, Star, Zap, Info, Radio, Menu, MapPin, Clock, Loader2, Navigation, ClipboardList, Camera } from 'lucide-react';
+import { Flame, Shield, Activity, AlertTriangle, Star, Zap, Info, Radio, Menu, MapPin, Clock, Loader2, Navigation, ClipboardList, Camera, Bell, BellOff, X } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -91,8 +91,46 @@ export function UserDashboard() {
   const { data: alertsData, isLoading: alertsLoading } = useCollection<EmergencyAlert>(alertsQuery);
   const alerts = alertsData || [];
 
+  // ── Notifications (false report warnings) ────────────────────────────────
+  const notificationsQuery = useMemoFirebase(() => {
+    if (!profile || !db) return null;
+    return query(
+      collection(db, 'users', profile.uid, 'notifications'),
+      orderBy('timestamp', 'desc')
+    );
+  }, [db, profile?.uid]);
+
+  const { data: notificationsData } = useCollection<UserNotification>(notificationsQuery);
+  const notifications = notificationsData || [];
+  const unreadNotifications = notifications.filter(n => !n.read);
+
+  const markNotificationRead = async (notifId: string) => {
+    if (!profile || !db) return;
+    await updateDoc(doc(db, 'users', profile.uid, 'notifications', notifId), { read: true });
+  };
+
+  const markAllNotificationsRead = async () => {
+    if (!profile || !db || unreadNotifications.length === 0) return;
+    const batch = writeBatch(db);
+    unreadNotifications.forEach(n => {
+      batch.update(doc(db, 'users', profile.uid, 'notifications', n.id), { read: true });
+    });
+    await batch.commit();
+  };
+
+  const isDeactivated = profile?.isDeactivated === true;
+
   const confirmAlert = async () => {
     if (!selectedType || !profile || !db) return;
+    if (isDeactivated) {
+      toast({
+        variant: 'destructive',
+        title: 'Account Deactivated',
+        description: 'Your account has been deactivated. You cannot submit emergency reports. Please contact the administrator.',
+      });
+      setConfirmOpen(false);
+      return;
+    }
     setIsSubmitting(true);
     setConfirmOpen(false);
     setGpsStatus('acquiring');
@@ -269,6 +307,54 @@ export function UserDashboard() {
         <div className="flex-1 overflow-y-auto pb-24 px-4 pt-4 space-y-4">
           {currentView === 'home' && (
             <>
+              {/* Deactivated / warning banner */}
+              {isDeactivated ? (
+                <div className="bg-red-900/40 border border-red-500/40 rounded-2xl p-4 flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-black text-red-300">Account Deactivated</p>
+                    <p className="text-xs text-red-400/80 mt-0.5">Your account has been deactivated due to false emergency reports. You cannot submit new reports. Contact the administrator to appeal.</p>
+                  </div>
+                </div>
+              ) : (profile?.falseReportCount ?? 0) > 0 ? (
+                <div className="bg-yellow-900/30 border border-yellow-500/30 rounded-2xl p-4 flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-black text-yellow-300">False Report Warning</p>
+                    <p className="text-xs text-yellow-400/80 mt-0.5">You have {profile?.falseReportCount}/3 false report violations. Your account will be deactivated at 3.</p>
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Unread notifications */}
+              {unreadNotifications.length > 0 && (
+                <div className="bg-slate-900/60 rounded-2xl border border-white/5 overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+                    <div className="flex items-center gap-2">
+                      <Bell className="h-4 w-4 text-red-400" />
+                      <span className="text-sm font-bold text-white">Notifications</span>
+                      <span className="h-5 w-5 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center">{unreadNotifications.length}</span>
+                    </div>
+                    <button onClick={markAllNotificationsRead} className="text-xs text-slate-400 hover:text-white font-semibold">Mark all read</button>
+                  </div>
+                  {unreadNotifications.slice(0, 3).map(notif => (
+                    <div key={notif.id} className={cn(
+                      "flex items-start gap-3 px-4 py-3 border-b border-white/5 last:border-0",
+                      notif.type === 'deactivated' ? 'bg-red-900/20' : 'bg-yellow-900/10'
+                    )}>
+                      <AlertTriangle className={cn("h-4 w-4 flex-shrink-0 mt-0.5", notif.type === 'deactivated' ? 'text-red-400' : 'text-yellow-400')} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-white">{notif.title}</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">{notif.message}</p>
+                      </div>
+                      <button onClick={() => markNotificationRead(notif.id)} className="text-slate-500 hover:text-white flex-shrink-0">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Welcome */}
               <div className="bg-slate-900/60 rounded-2xl p-4 border border-white/5">
                 <h1 className="text-xl font-black text-white">Hi, {profile?.name} 👋</h1>
@@ -301,10 +387,11 @@ export function UserDashboard() {
                         { timeout: 8000, enableHighAccuracy: true }
                       );
                     }}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isDeactivated}
                     className={cn(
                       "h-40 rounded-3xl flex flex-col items-center justify-center gap-3 transition-all active:scale-95",
-                      btn.color, "shadow-xl border-none"
+                      btn.color, "shadow-xl border-none",
+                      isDeactivated && "opacity-40 cursor-not-allowed"
                     )}
                   >
                     <btn.icon className="h-10 w-10 text-white" />
@@ -548,6 +635,54 @@ export function UserDashboard() {
           
           {currentView === "home" && (
             <>
+              {/* Deactivated / warning banner — desktop */}
+              {isDeactivated ? (
+                <div className="bg-red-900/40 border border-red-500/40 rounded-2xl p-5 flex items-start gap-4">
+                  <AlertTriangle className="h-6 w-6 text-red-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-base font-black text-red-300">Account Deactivated</p>
+                    <p className="text-sm text-red-400/80 mt-1">Your account has been deactivated due to false emergency reports. You cannot submit new reports. Contact the administrator to appeal.</p>
+                  </div>
+                </div>
+              ) : (profile?.falseReportCount ?? 0) > 0 ? (
+                <div className="bg-yellow-900/30 border border-yellow-500/30 rounded-2xl p-5 flex items-start gap-4">
+                  <AlertTriangle className="h-6 w-6 text-yellow-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-base font-black text-yellow-300">False Report Warning</p>
+                    <p className="text-sm text-yellow-400/80 mt-1">You have {profile?.falseReportCount}/3 false report violations. Your account will be deactivated upon reaching 3.</p>
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Unread notifications — desktop */}
+              {unreadNotifications.length > 0 && (
+                <div className="bg-slate-900/60 rounded-2xl border border-white/5 overflow-hidden">
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
+                    <div className="flex items-center gap-3">
+                      <Bell className="h-4 w-4 text-red-400" />
+                      <span className="text-sm font-bold text-white">Notifications</span>
+                      <span className="h-5 w-5 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center">{unreadNotifications.length}</span>
+                    </div>
+                    <button onClick={markAllNotificationsRead} className="text-xs text-slate-400 hover:text-white font-semibold transition-colors">Mark all read</button>
+                  </div>
+                  {unreadNotifications.map(notif => (
+                    <div key={notif.id} className={cn(
+                      "flex items-start gap-4 px-6 py-4 border-b border-white/5 last:border-0",
+                      notif.type === 'deactivated' ? 'bg-red-900/20' : 'bg-yellow-900/10'
+                    )}>
+                      <AlertTriangle className={cn("h-5 w-5 flex-shrink-0 mt-0.5", notif.type === 'deactivated' ? 'text-red-400' : 'text-yellow-400')} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-white">{notif.title}</p>
+                        <p className="text-xs text-slate-400 mt-1 leading-relaxed">{notif.message}</p>
+                      </div>
+                      <button onClick={() => markNotificationRead(notif.id)} className="text-slate-500 hover:text-white flex-shrink-0 transition-colors">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="flex items-center gap-4 bg-slate-900/40 p-6 md:p-8 rounded-[2.5rem] border border-white/5 mb-10 shadow-2xl">
                 <div className="bg-slate-800/80 p-4 rounded-2xl border border-white/10 flex-shrink-0">
                   <Menu className="h-8 w-8 text-slate-400" />
@@ -584,11 +719,12 @@ export function UserDashboard() {
                           { timeout: 8000, enableHighAccuracy: true }
                         );
                       }} 
-                      disabled={isSubmitting} 
+                      disabled={isSubmitting || isDeactivated} 
                       className={cn(
                         "h-[220px] md:h-[250px] lg:h-[280px] rounded-[3rem] flex flex-col items-center justify-center gap-6 transition-all active:scale-95 relative overflow-hidden",
                         btn.color,
-                        "hover:brightness-110 shadow-2xl border-none"
+                        "hover:brightness-110 shadow-2xl border-none",
+                        isDeactivated && "opacity-40 cursor-not-allowed"
                       )}
                     >
                       <div className="space-y-4 text-center">

@@ -254,10 +254,28 @@ export function AdminDashboard() {
       const current = selectedUser.falseReportCount ?? 0;
       const next = current + 1;
       const shouldDeactivate = next >= 3;
-      await setDoc(doc(db, 'users', selectedUser.uid), {
-        falseReportCount: next,
-        ...(shouldDeactivate ? { isDeactivated: true } : {}),
-      }, { merge: true });
+
+      const batch = writeBatch(db);
+      const userUpdate: Record<string, any> = { falseReportCount: next };
+      if (shouldDeactivate) userUpdate.isDeactivated = true;
+      batch.set(doc(db, 'users', selectedUser.uid), userUpdate, { merge: true });
+
+      // Write in-app warning notification to the user
+      const notifRef = doc(collection(db, 'users', selectedUser.uid, 'notifications'));
+      batch.set(notifRef, {
+        id: notifRef.id,
+        type: shouldDeactivate ? 'deactivated' : 'warning',
+        title: shouldDeactivate
+          ? 'Account Deactivated'
+          : `False Report Warning (${next}/3)`,
+        message: shouldDeactivate
+          ? 'Your account has been deactivated due to 3 false emergency reports. Please contact the administrator to appeal.'
+          : `A violation has been recorded on your account by an administrator. You have ${next} of 3 allowed violations. Your account will be deactivated upon reaching 3 false reports.`,
+        timestamp: new Date(),
+        read: false,
+      });
+
+      await batch.commit();
       setSelectedUser(prev => prev ? {
         ...prev,
         falseReportCount: next,

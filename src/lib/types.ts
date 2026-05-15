@@ -13,6 +13,15 @@ export interface UserProfile {
   isDeactivated?: boolean;
 }
 
+export interface UserNotification {
+  id: string;
+  type: 'warning' | 'deactivated';
+  title: string;
+  message: string;
+  timestamp: any;
+  read: boolean;
+}
+
 export type EmergencyType = 'fire' | 'crime' | 'medical';
 export type AlertStatus = 'pending' | 'responding' | 'resolved';
 

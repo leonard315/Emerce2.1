@@ -131,22 +131,46 @@ export function FireDashboard() {
 
   const markFalseReport = async (alert: EmergencyAlert) => {
     if (!profile || !db) return;
-    const batch = writeBatch(db);
-    const data = { status: 'false_report' as any, falseReportBy: profile.name, falseReportTime: firestoreTimestamp() };
-    batch.update(doc(db, 'agency_alerts_fire', alert.id), data);
-    batch.update(doc(db, 'users', alert.userId, 'alerts', alert.id), data);
-    batch.update(doc(db, 'all_alerts', alert.id), data);
-    // Increment violation count on the user
+    const { getDoc, updateDoc, setDoc: fsSetDoc, collection: fsCollection } = await import('firebase/firestore');
     const userRef = doc(db, 'users', alert.userId);
-    const { getDoc, updateDoc, increment } = await import('firebase/firestore');
     const userSnap = await getDoc(userRef);
-    const violations = (userSnap.data()?.violations || 0) + 1;
-    await updateDoc(userRef, { violations });
+    const current = (userSnap.data()?.falseReportCount || 0);
+    const next = current + 1;
+    const shouldDeactivate = next >= 3;
+
+    const batch = writeBatch(db);
+    const alertData = { status: 'false_report' as any, falseReportBy: profile.name, falseReportTime: firestoreTimestamp() };
+    batch.update(doc(db, 'agency_alerts_fire', alert.id), alertData);
+    batch.update(doc(db, 'users', alert.userId, 'alerts', alert.id), alertData);
+    batch.update(doc(db, 'all_alerts', alert.id), alertData);
+
+    // Update user: increment falseReportCount, deactivate if threshold reached
+    const userUpdate: Record<string, any> = { falseReportCount: next };
+    if (shouldDeactivate) userUpdate.isDeactivated = true;
+    batch.update(userRef, userUpdate);
+
+    // Write in-app warning notification to the user
+    const notifRef = doc(fsCollection(db, 'users', alert.userId, 'notifications'));
+    batch.set(notifRef, {
+      id: notifRef.id,
+      type: shouldDeactivate ? 'deactivated' : 'warning',
+      title: shouldDeactivate
+        ? 'Account Deactivated'
+        : `False Report Warning (${next}/3)`,
+      message: shouldDeactivate
+        ? 'Your account has been deactivated due to 3 false emergency reports. Please contact the administrator to appeal.'
+        : `Your report was marked as false by a responder. You have ${next} of 3 allowed violations. Your account will be deactivated upon reaching 3 false reports.`,
+      timestamp: firestoreTimestamp(),
+      read: false,
+    });
+
     await batch.commit();
     toast({
       variant: 'destructive',
       title: 'Marked as False Report',
-      description: `${alert.userName} now has ${violations} violation${violations > 1 ? 's' : ''}${violations >= 3 ? ' — account flagged for suspension' : ''}.`,
+      description: shouldDeactivate
+        ? `${alert.userName}'s account has been deactivated (3 false reports).`
+        : `${alert.userName} now has ${next}/3 false report violation${next > 1 ? 's' : ''}.`,
     });
   };
 
