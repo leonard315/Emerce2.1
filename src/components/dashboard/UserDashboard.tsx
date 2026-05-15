@@ -188,12 +188,12 @@ export function UserDashboard() {
 
     const alertId = doc(collection(db, 'temp')).id;
 
-    // Upload photo evidence as base64 if provided — compress aggressively to stay under Firestore 1MB limit
+    // Compress photo aggressively — target < 200KB base64
     let photoEvidenceUrl: string | null = null;
     if (photoEvidence) {
       try {
         const { resizeImageToBase64 } = await import('@/lib/resize-image');
-        photoEvidenceUrl = await resizeImageToBase64(photoEvidence, 400, 0.55);
+        photoEvidenceUrl = await resizeImageToBase64(photoEvidence, 320, 0.45);
       } catch {
         toast({ variant: 'destructive', title: 'Photo upload failed', description: 'Alert sent without photo.' });
       }
@@ -212,14 +212,13 @@ export function UserDashboard() {
       location,
       status: 'pending' as const,
       timestamp: firestoreTimestamp(),
-      ...(photoEvidenceUrl ? { photoEvidenceUrl } : {}),
-      ...(voiceNote ? { voiceNoteUrl: voiceNote } : {}),
+      hasPhoto: !!photoEvidenceUrl,
+      hasVoice: !!voiceNote,
     };
 
     const batch = writeBatch(db);
 
     if (selectedType === 'all') {
-      // Send to all three agencies with their correct type
       const fireData = { ...baseAlertData, type: 'fire' as const, color: 'orange' };
       const policeData = { ...baseAlertData, type: 'crime' as const, color: 'blue' };
       const medicalData = { ...baseAlertData, type: 'medical' as const, color: 'red' };
@@ -241,8 +240,24 @@ export function UserDashboard() {
       batch.set(doc(db, agencyCollection, alertId), alertData);
       batch.set(doc(db, 'all_alerts', alertId), alertData);
     }
-    
+
     await batch.commit();
+
+    // Store media in a separate document to avoid Firestore 1MB limit on the alert doc
+    if (photoEvidenceUrl || voiceNote) {
+      try {
+        const { setDoc: fsSetDoc } = await import('firebase/firestore');
+        await fsSetDoc(doc(db, 'alert_media', alertId), {
+          alertId,
+          userId: profile.uid,
+          ...(photoEvidenceUrl ? { photoEvidenceUrl } : {}),
+          ...(voiceNote ? { voiceNoteUrl: voiceNote } : {}),
+          timestamp: firestoreTimestamp(),
+        });
+      } catch {
+        toast({ variant: 'destructive', title: 'Media upload failed', description: 'Alert sent but media could not be saved.' });
+      }
+    }
 
     if (rtdb) {
       push(ref(rtdb, 'live-logs'), {
@@ -255,6 +270,8 @@ export function UserDashboard() {
     toast({ title: "SIGNAL TRANSMITTED", description: "Emergency units have been notified." });
     setIsSubmitting(false);
     setSelectedType(null);
+    setVoiceNote(null);
+    setPhotoEvidence(null);
   };
 
   const submitFeedback = async () => {

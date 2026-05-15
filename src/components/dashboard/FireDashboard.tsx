@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { collection, query, orderBy, doc, writeBatch, serverTimestamp as firestoreTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, doc, writeBatch, serverTimestamp as firestoreTimestamp, getDoc } from 'firebase/firestore';
 import { ref, push, serverTimestamp as rtdbTimestamp } from 'firebase/database';
 import { useFirestore, useCollection, useDatabase, useMemoFirebase } from '@/firebase';
 import { EmergencyAlert, AlertStatus } from '@/lib/types';
@@ -62,6 +62,16 @@ export function FireDashboard() {
 
   const { data: alertsData, isLoading } = useCollection<EmergencyAlert>(alertsQuery);
   const alerts = alertsData || [];
+
+  // Fetch media (photo + voice) stored separately to avoid Firestore 1MB limit
+  const mediaQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'alert_media'), orderBy('timestamp', 'desc'));
+  }, [db]);
+  const { data: mediaData } = useCollection<any>(mediaQuery);
+  const mediaMap = (mediaData || []).reduce((acc: Record<string, any>, m: any) => {
+    acc[m.alertId] = m; return acc;
+  }, {});
 
   const { soundEnabled, toggleSound, playNewIncident, playSiren, stopSiren, sirenActive } = useAlertSound();
   const prevCountRef = useRef<number | null>(null);
@@ -363,12 +373,12 @@ export function FireDashboard() {
                         </div>
 
                         {/* Photo Evidence */}
-                        {(alert as any).photoEvidenceUrl && (
+                        {((alert as any).photoEvidenceUrl || mediaMap[alert.id]?.photoEvidenceUrl) && (
                           <div className="mb-4 rounded-xl overflow-hidden border border-white/10">
                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 py-2 bg-slate-800/60 border-b border-white/5">Photo Evidence</p>
-                            <a href={(alert as any).photoEvidenceUrl} target="_blank" rel="noopener noreferrer">
+                            <a href={(alert as any).photoEvidenceUrl || mediaMap[alert.id]?.photoEvidenceUrl} target="_blank" rel="noopener noreferrer">
                               <img
-                                src={(alert as any).photoEvidenceUrl}
+                                src={(alert as any).photoEvidenceUrl || mediaMap[alert.id]?.photoEvidenceUrl}
                                 alt="Photo evidence"
                                 className="w-full max-h-56 object-cover hover:opacity-90 transition-opacity cursor-zoom-in"
                               />
@@ -377,11 +387,11 @@ export function FireDashboard() {
                         )}
 
                         {/* Voice Note */}
-                        {(alert as any).voiceNoteUrl && (
+                        {((alert as any).voiceNoteUrl || mediaMap[alert.id]?.voiceNoteUrl) && (
                           <div className="mb-4 rounded-xl border border-white/10 bg-slate-800/60 overflow-hidden">
                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 py-2 border-b border-white/5">Voice Note</p>
                             <div className="px-3 py-2">
-                              <audio src={(alert as any).voiceNoteUrl} controls className="w-full h-8" />
+                              <audio src={(alert as any).voiceNoteUrl || mediaMap[alert.id]?.voiceNoteUrl} controls className="w-full h-8" />
                             </div>
                           </div>
                         )}

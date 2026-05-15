@@ -150,6 +150,14 @@ service cloud.firestore {
       allow read, list: if isAdmin();
     }
 
+    // ── Alert media (photo + voice stored separately) ───────────────────────
+
+    match /alert_media/{alertId} {
+      allow create: if isSignedIn();
+      allow read, get, list: if isAdmin() || isAnyAgency() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
     // ── Logs ────────────────────────────────────────────────────────────────
 
     match /logs/{logId} {
