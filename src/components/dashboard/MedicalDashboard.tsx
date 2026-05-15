@@ -65,9 +65,7 @@ export function MedicalDashboard() {
     if (prevCountRef.current !== null && pending > prevCountRef.current) {
       playNewIncident('medical');
       playSiren('medical');
-    }
-    // Stop siren when all pending alerts are responded to
-    if (prevCountRef.current !== null && pending === 0 && prevCountRef.current > 0) {
+    } else if (prevCountRef.current !== null && pending < prevCountRef.current) {
       stopSiren();
     }
     prevCountRef.current = pending;

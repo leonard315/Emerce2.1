@@ -70,9 +70,7 @@ export function PoliceDashboard() {
     if (prevCountRef.current !== null && pending > prevCountRef.current) {
       playNewIncident('police');
       playSiren('police');
-    }
-    // Stop siren when all pending alerts are responded to
-    if (prevCountRef.current !== null && pending === 0 && prevCountRef.current > 0) {
+    } else if (prevCountRef.current !== null && pending < prevCountRef.current) {
       stopSiren();
     }
     prevCountRef.current = pending;

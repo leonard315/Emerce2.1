@@ -2,11 +2,10 @@
 
 import { useRef, useState, useEffect, useCallback } from 'react';
 
-// ─── Duration constant ────────────────────────────────────────────────────────
 const ALERT_DURATION_MS = 60_000; // 1 minute
 
-// ─── Fire alarm sound ─────────────────────────────────────────────────────────
-function createFireAlarm(ctx: AudioContext): () => void {
+// ─── Fire alarm ───────────────────────────────────────────────────────────────
+function createFireAlarm(ctx: AudioContext) {
   const ringFreq = 880;
   const ringDuration = 0.08;
   const ringGap = 0.04;
@@ -34,15 +33,12 @@ function createFireAlarm(ctx: AudioContext): () => void {
       osc.stop(t + ringDuration + 0.01);
     }
   }
-  // No-op stop — actual stopping is done by suspending the AudioContext
-  return () => {};
 }
 
-// ─── Police patrol car siren ──────────────────────────────────────────────────
-function createPoliceSiren(ctx: AudioContext): () => void {
+// ─── Police siren ─────────────────────────────────────────────────────────────
+function createPoliceSiren(ctx: AudioContext) {
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
-
   osc.type = 'sawtooth';
   gain.gain.setValueAtTime(0.4, ctx.currentTime);
   osc.connect(gain);
@@ -60,18 +56,14 @@ function createPoliceSiren(ctx: AudioContext): () => void {
       osc.frequency.linearRampToValueAtTime(600, t + sweepDuration);
     }
   }
-
   osc.start(ctx.currentTime);
   osc.stop(ctx.currentTime + ALERT_DURATION_MS / 1000 + 0.1);
-
-  return () => {};
 }
 
-// ─── Ambulance hi-lo siren ────────────────────────────────────────────────────
-function createAmbulanceSiren(ctx: AudioContext): () => void {
+// ─── Ambulance siren ──────────────────────────────────────────────────────────
+function createAmbulanceSiren(ctx: AudioContext) {
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
-
   osc.type = 'sine';
   gain.gain.setValueAtTime(0.45, ctx.currentTime);
   osc.connect(gain);
@@ -85,15 +77,12 @@ function createAmbulanceSiren(ctx: AudioContext): () => void {
     osc.frequency.setValueAtTime(freq, t);
     osc.frequency.linearRampToValueAtTime(freq, t + toneDuration - 0.02);
   }
-
   osc.start(ctx.currentTime);
   osc.stop(ctx.currentTime + ALERT_DURATION_MS / 1000 + 0.1);
-
-  return () => {};
 }
 
 // ─── Escape alarm ─────────────────────────────────────────────────────────────
-function createEscapeAlarm(ctx: AudioContext): () => void {
+function createEscapeAlarm(ctx: AudioContext) {
   const ATTEMPT_DURATION = 5.0;
   const ATTEMPT_GAP = 1.0;
   const TOTAL_ATTEMPTS = 3;
@@ -102,7 +91,6 @@ function createEscapeAlarm(ctx: AudioContext): () => void {
     const attemptStart = attempt * (ATTEMPT_DURATION + ATTEMPT_GAP);
     const pulseInterval = 0.05;
     const totalPulses = Math.floor(ATTEMPT_DURATION / pulseInterval);
-
     for (let p = 0; p < totalPulses; p++) {
       const t = ctx.currentTime + attemptStart + p * pulseInterval;
       const osc = ctx.createOscillator();
@@ -118,19 +106,16 @@ function createEscapeAlarm(ctx: AudioContext): () => void {
       osc.stop(t + 0.05);
     }
   }
-
-  return () => {};
 }
 
-// ─── New incident beep ────────────────────────────────────────────────────────
+// ─── Alert beep ───────────────────────────────────────────────────────────────
 function playAlertBeep(ctx: AudioContext, type: 'fire' | 'police' | 'medical' | 'all' = 'fire') {
   const configs = {
     fire:    [{ f: 880,  t: 0 }, { f: 880,  t: 0.15 }, { f: 880,  t: 0.3 }],
-    police:  [{ f: 800,  t: 0 }, { f: 1200, t: 0.4 }, { f: 800,  t: 0.8 }],
-    medical: [{ f: 960,  t: 0 }, { f: 770,  t: 0.4 }, { f: 960,  t: 0.8 }],
-    all:     [{ f: 1800, t: 0 }, { f: 1400, t: 0.2 }, { f: 1800, t: 0.4 }, { f: 1400, t: 0.6 }],
+    police:  [{ f: 800,  t: 0 }, { f: 1200, t: 0.4 },  { f: 800,  t: 0.8 }],
+    medical: [{ f: 960,  t: 0 }, { f: 770,  t: 0.4 },  { f: 960,  t: 0.8 }],
+    all:     [{ f: 1800, t: 0 }, { f: 1400, t: 0.2 },  { f: 1800, t: 0.4 }, { f: 1400, t: 0.6 }],
   };
-
   configs[type].forEach(({ f, t }) => {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -162,30 +147,25 @@ interface UseAlertSoundReturn {
 export function useAlertSound(): UseAlertSoundReturn {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [sirenActive, setSirenActive] = useState(false);
-  const audioCtxRef = useRef<AudioContext | null>(null);
+
+  // We keep a ref to the CURRENT siren AudioContext so we can close it on demand
+  const sirenCtxRef = useRef<AudioContext | null>(null);
+  // Separate context for short beeps so closing siren ctx doesn't cut beeps
+  const beepCtxRef = useRef<AudioContext | null>(null);
   const autoStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── Get or create AudioContext ──────────────────────────────────────────────
-  const getCtx = useCallback(() => {
-    if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
-      audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-    if (audioCtxRef.current.state === 'suspended') {
-      audioCtxRef.current.resume();
-    }
-    return audioCtxRef.current;
-  }, []);
-
-  // ── Hard-stop: suspend + close the AudioContext, then null it ───────────────
-  // This is the only reliable way to silence pre-scheduled Web Audio nodes.
-  const killAudio = useCallback(() => {
+  // ── Immediately silence the siren by suspending its AudioContext ────────────
+  const stopSiren = useCallback(() => {
     if (autoStopTimerRef.current) {
       clearTimeout(autoStopTimerRef.current);
       autoStopTimerRef.current = null;
     }
-    if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-      audioCtxRef.current.close().catch(() => {});
-      audioCtxRef.current = null;
+    if (sirenCtxRef.current) {
+      // suspend() mutes output instantly without destroying the context
+      sirenCtxRef.current.suspend().catch(() => {});
+      // Then close it so it gets GC'd
+      sirenCtxRef.current.close().catch(() => {});
+      sirenCtxRef.current = null;
     }
     setSirenActive(false);
   }, []);
@@ -193,20 +173,25 @@ export function useAlertSound(): UseAlertSoundReturn {
   const playNewIncident = useCallback((type: AgencyType = 'fire') => {
     if (!soundEnabled) return;
     try {
-      const ctx = getCtx();
-      playAlertBeep(ctx, type);
+      if (!beepCtxRef.current || beepCtxRef.current.state === 'closed') {
+        beepCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      if (beepCtxRef.current.state === 'suspended') beepCtxRef.current.resume();
+      playAlertBeep(beepCtxRef.current, type);
     } catch (e) {
-      console.warn('Audio playback failed:', e);
+      console.warn('Beep failed:', e);
     }
-  }, [soundEnabled, getCtx]);
+  }, [soundEnabled]);
 
   const playSiren = useCallback((type: AgencyType = 'fire') => {
     if (!soundEnabled) return;
     try {
-      // Kill any existing audio context so previous siren stops immediately
-      killAudio();
+      // Stop any currently playing siren first
+      stopSiren();
 
-      const ctx = getCtx();
+      // Create a fresh AudioContext exclusively for this siren
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      sirenCtxRef.current = ctx;
 
       switch (type) {
         case 'fire':    createFireAlarm(ctx);      break;
@@ -218,42 +203,32 @@ export function useAlertSound(): UseAlertSoundReturn {
 
       setSirenActive(true);
 
-      // Auto-stop after duration
       const duration = type === 'all'
         ? 3 * (5000 + 1000) + 200
         : ALERT_DURATION_MS + 200;
 
       autoStopTimerRef.current = setTimeout(() => {
-        killAudio();
+        stopSiren();
       }, duration);
 
     } catch (e) {
-      console.warn('Siren playback failed:', e);
+      console.warn('Siren failed:', e);
     }
-  }, [soundEnabled, getCtx, killAudio]);
-
-  const stopSiren = useCallback(() => {
-    killAudio();
-  }, [killAudio]);
+  }, [soundEnabled, stopSiren]);
 
   const toggleSound = useCallback(() => {
     setSoundEnabled(prev => {
-      const next = !prev;
-      if (!next) {
-        // Turning OFF — kill audio immediately
-        killAudio();
-      }
-      return next;
+      if (prev) stopSiren(); // turning off — kill siren immediately
+      return !prev;
     });
-  }, [killAudio]);
+  }, [stopSiren]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (autoStopTimerRef.current) clearTimeout(autoStopTimerRef.current);
-      if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-        audioCtxRef.current.close().catch(() => {});
-      }
+      sirenCtxRef.current?.close().catch(() => {});
+      beepCtxRef.current?.close().catch(() => {});
     };
   }, []);
 

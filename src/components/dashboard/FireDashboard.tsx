@@ -68,13 +68,12 @@ export function FireDashboard() {
 
   useEffect(() => {
     const pending = alerts.filter(a => a.status === 'pending').length;
-    // prevCountRef.current === null means first load — don't sound on initial render
     if (prevCountRef.current !== null && pending > prevCountRef.current) {
+      // New pending alert arrived — play sound
       playNewIncident('fire');
       playSiren('fire');
-    }
-    // Stop siren when all pending alerts are responded to
-    if (prevCountRef.current !== null && pending === 0 && prevCountRef.current > 0) {
+    } else if (prevCountRef.current !== null && pending < prevCountRef.current) {
+      // A pending alert was responded to or marked false — stop siren
       stopSiren();
     }
     prevCountRef.current = pending;
