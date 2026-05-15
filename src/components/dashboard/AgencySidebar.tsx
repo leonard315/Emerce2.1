@@ -9,6 +9,7 @@ import {
   Flame,
   ShieldCheck,
   HeartPulse,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "firebase/auth";
@@ -87,6 +88,7 @@ export function AgencySidebar({ currentView, onViewChange }: AgencySidebarProps)
     { title: "Dashboard", view: "dashboard", icon: LayoutDashboard },
     { title: "Live Map", view: "map", icon: Map, href: "/map" },
     { title: "My Profile", view: "profile", icon: UserCircle },
+    { title: "Settings", view: "settings", icon: Settings },
   ];
 
   return (

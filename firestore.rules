@@ -150,6 +150,12 @@ service cloud.firestore {
       allow read, list: if isAdmin();
     }
 
+    // ── Agency settings ──────────────────────────────────────────────────────
+
+    match /agency_settings/{uid} {
+      allow read, write: if isSignedIn() && isOwner(uid);
+    }
+
     // ── Alert media (photo + voice stored separately) ───────────────────────
 
     match /alert_media/{alertId} {

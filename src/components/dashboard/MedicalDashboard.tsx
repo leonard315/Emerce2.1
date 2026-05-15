@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AgencySidebar } from "./AgencySidebar";
 import { AgencyProfileView } from "./AgencyProfileView";
+import { AgencySettings } from "./AgencySettings";
 import { AlertSoundButton } from "./AlertSoundButton";
 import { useAlertSound } from "@/hooks/use-alert-sound";
 import { SectorVectorGrid } from "./SectorVectorGrid";
@@ -190,6 +191,12 @@ export function MedicalDashboard() {
         {currentView === 'profile' && (
           <div className="p-6">
             <AgencyProfileView agencyColor="text-red-400" badgeClass="bg-red-500/10 text-red-400 border-red-500/20" />
+          </div>
+        )}
+
+        {currentView === 'settings' && (
+          <div className="p-6">
+            <AgencySettings />
           </div>
         )}
 

@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AgencySidebar } from "./AgencySidebar";
 import { AgencyProfileView } from "./AgencyProfileView";
+import { AgencySettings } from "./AgencySettings";
 import { AlertSoundButton } from "./AlertSoundButton";
 import { useAlertSound } from "@/hooks/use-alert-sound";
 import { SectorVectorGrid } from "./SectorVectorGrid";
@@ -224,6 +225,13 @@ export function FireDashboard() {
               agencyColor="text-orange-400"
               badgeClass="bg-orange-500/10 text-orange-400 border-orange-500/20"
             />
+          </div>
+        )}
+
+        {/* ── Settings view ─────────────────────────────────────────────────── */}
+        {currentView === 'settings' && (
+          <div className="p-6">
+            <AgencySettings />
           </div>
         )}
 

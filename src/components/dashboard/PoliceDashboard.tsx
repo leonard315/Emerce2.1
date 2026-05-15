@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AgencySidebar } from "./AgencySidebar";
 import { AgencyProfileView } from "./AgencyProfileView";
+import { AgencySettings } from "./AgencySettings";
 import { AlertSoundButton } from "./AlertSoundButton";
 import { useAlertSound } from "@/hooks/use-alert-sound";
 import { SectorVectorGrid } from "./SectorVectorGrid";
@@ -217,6 +218,12 @@ export function PoliceDashboard() {
               agencyColor="text-blue-400"
               badgeClass="bg-blue-500/10 text-blue-400 border-blue-500/20"
             />
+          </div>
+        )}
+
+        {currentView === 'settings' && (
+          <div className="p-6">
+            <AgencySettings />
           </div>
         )}
 
