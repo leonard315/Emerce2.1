@@ -764,13 +764,15 @@ export function UserDashboard() {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-                  <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500">Select Incident Type</h2>
+              <div className="space-y-4">
+                {/* Office dots */}
+                <div className="flex items-center gap-5 text-xs text-slate-400">
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-blue-500 inline-block" />Security</span>
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-orange-500 inline-block" />DRRM</span>
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-500 inline-block" />Clinic</span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   {emergencyButtons.map((btn) => (
                     <button
                       key={btn.type}
@@ -791,18 +793,17 @@ export function UserDashboard() {
                       }}
                       disabled={isSubmitting || isDeactivated}
                       className={cn(
-                        "group relative flex flex-col items-center justify-center gap-3 rounded-2xl p-6 h-[160px] transition-all duration-200 active:scale-95 overflow-hidden border border-white/10",
+                        "group relative flex flex-col items-center justify-center gap-4 rounded-3xl aspect-square transition-all duration-200 active:scale-95 overflow-hidden",
                         btn.color,
-                        "hover:brightness-110 hover:scale-[1.02] shadow-lg",
+                        "hover:brightness-110 hover:scale-[1.02]",
                         isDeactivated && "opacity-40 cursor-not-allowed"
                       )}
                     >
-                      {/* Subtle inner glow */}
-                      <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      <btn.icon className="h-8 w-8 text-white drop-shadow-md relative z-10" strokeWidth={1.75} />
-                      <div className="text-center relative z-10">
-                        <span className="text-lg font-black text-white tracking-wide block leading-none">{btn.title}</span>
-                        <span className="text-[10px] text-white/60 font-medium mt-1 block">{btn.subtitle}</span>
+                      <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <btn.icon className="h-10 w-10 text-white relative z-10" strokeWidth={1.5} />
+                      <div className="text-center relative z-10 px-4">
+                        <span className="text-xl font-black text-white tracking-widest block leading-none">{btn.title}</span>
+                        <span className="text-xs text-white/70 font-medium mt-1.5 block">{btn.subtitle}</span>
                       </div>
                     </button>
                   ))}
