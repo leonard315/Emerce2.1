@@ -317,29 +317,39 @@ export function AdminDashboard() {
     }
     setDeletingUser(true);
     try {
+      const { getDocs, query: fsQuery, where, deleteDoc: fsDeleteDoc, collection: fsCollection } = await import('firebase/firestore');
+
+      // 1. Collect all alert IDs from the user's subcollection first
+      const userAlertsSnap = await getDocs(fsCollection(db, 'users', selectedUser.uid, 'alerts'));
+      const alertIds = userAlertsSnap.docs.map(d => d.id);
+
+      // 2. Delete from all agency + global collections using those IDs
+      const agencyCollections = ['agency_alerts_fire', 'agency_alerts_police', 'agency_alerts_medical', 'all_alerts'];
+      for (const alertId of alertIds) {
+        for (const col of agencyCollections) {
+          try { await fsDeleteDoc(doc(db, col, alertId)); } catch {}
+        }
+      }
+
+      // 3. Also query by userId in case some alerts weren't in the subcollection
+      for (const col of agencyCollections) {
+        try {
+          const snap = await getDocs(fsQuery(fsCollection(db, col), where('userId', '==', selectedUser.uid)));
+          for (const d of snap.docs) { await fsDeleteDoc(d.ref); }
+        } catch {}
+      }
+
+      // 4. Delete role collections + user doc
       const roleCollections = [
         'roles_admin', 'roles_fire_agency', 'roles_police_agency',
         'roles_medical_agency', 'roles_general_users',
       ];
       const batch = writeBatch(db);
-      roleCollections.forEach(col => {
-        batch.delete(doc(db, col, selectedUser.uid));
-      });
+      roleCollections.forEach(col => batch.delete(doc(db, col, selectedUser.uid)));
       batch.delete(doc(db, 'users', selectedUser.uid));
       await batch.commit();
 
-      // Also delete all alerts from agency collections that belong to this user
-      // (subcollections can't be batch-deleted from client, but we clean up top-level docs)
-      const { getDocs, query: fsQuery, where, deleteDoc: fsDeleteDoc } = await import('firebase/firestore');
-      const agencyCollections = ['agency_alerts_fire', 'agency_alerts_police', 'agency_alerts_medical', 'all_alerts'];
-      for (const col of agencyCollections) {
-        const snap = await getDocs(fsQuery(collection(db, col), where('userId', '==', selectedUser.uid)));
-        for (const d of snap.docs) {
-          await fsDeleteDoc(d.ref);
-        }
-      }
-
-      toast({ title: 'Account deleted', description: `${selectedUser.name}'s account and all associated alerts have been permanently deleted.` });
+      toast({ title: 'Account deleted', description: `${selectedUser.name}'s account and all associated data have been permanently deleted.` });
       setDeleteConfirmOpen(false);
       setSelectedUser(null);
     } catch (e: any) {
