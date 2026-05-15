@@ -11,7 +11,7 @@ const slides = [
     icon: <img src="/icons/logo.png" alt="Logo" className="w-20 h-20 rounded-2xl object-cover shadow-2xl" />,
     title: 'Emergency Hotline',
     subtitle: 'Smart Multi-Emergency Alarm System',
-    body: 'A color-coded alert device for integrated emergency response. Report fire, crime, or medical emergencies instantly — directly to the right agency.',
+    body: 'A color-coded alert system for integrated emergency response. Report fire, crime, or medical emergencies instantly — directly to the right agency.',
     accent: 'from-red-600 to-red-900',
   },
   {
@@ -24,9 +24,9 @@ const slides = [
       </div>
     ),
     title: 'Four Emergency Types',
-    subtitle: 'Fire · Police · Rescue & Medical · All Agencies',
+    subtitle: 'Fire · Police · Medical · All Agencies',
     body: 'Tap the matching button to alert the Bureau of Fire Protection (BFP), Philippine National Police (PNP), Emergency Medical Services (EMS), or all agencies at once.',
-    accent: 'from-blue-600 to-blue-900',
+    accent: 'from-red-600 to-red-900',
   },
   {
     icon: <div className="h-20 w-20 rounded-2xl bg-green-500/20 flex items-center justify-center"><span className="text-4xl">📍</span></div>,

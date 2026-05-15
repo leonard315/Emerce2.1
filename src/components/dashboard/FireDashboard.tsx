@@ -228,7 +228,7 @@ export function FireDashboard() {
                   <Flame className="h-6 w-6 text-orange-500" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-black text-white tracking-tight">Fire Agency Dashboard</h1>
+                  <h1 className="text-2xl font-black text-white tracking-tight">BFP Fire Agency Dashboard</h1>
                   <p className="text-xs text-slate-400 mt-0.5">Bureau of Fire Protection — Real-time incident management</p>
                 </div>
               </div>
