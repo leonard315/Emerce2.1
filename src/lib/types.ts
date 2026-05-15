@@ -23,7 +23,7 @@ export interface UserNotification {
 }
 
 export type EmergencyType = 'fire' | 'crime' | 'medical';
-export type AlertStatus = 'pending' | 'responding' | 'resolved';
+export type AlertStatus = 'pending' | 'responding' | 'resolved' | 'false_report';
 
 export interface EmergencyAlert {
   id: string;

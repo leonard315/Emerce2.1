@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { collection, query, orderBy, doc, writeBatch, serverTimestamp as firestoreTimestamp } from 'firebase/firestore';
 import { ref, push, serverTimestamp as rtdbTimestamp } from 'firebase/database';
 import { useFirestore, useCollection, useDatabase, useMemoFirebase } from '@/firebase';
-import { EmergencyAlert } from '@/lib/types';
+import { EmergencyAlert, AlertStatus } from '@/lib/types';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from "@/hooks/use-toast";
@@ -27,13 +27,16 @@ function StatusBadge({ status }: { status: string }) {
       "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide",
       status === 'pending' ? 'bg-red-500/15 text-red-400' :
       status === 'responding' ? 'bg-blue-500/15 text-blue-400' :
+      status === 'false_report' ? 'bg-red-900/40 text-red-400' :
       'bg-green-500/15 text-green-400'
     )}>
       <span className={cn("h-1.5 w-1.5 rounded-full",
         status === 'pending' ? 'bg-red-400 animate-pulse' :
-        status === 'responding' ? 'bg-blue-400 animate-pulse' : 'bg-green-400'
+        status === 'responding' ? 'bg-blue-400 animate-pulse' :
+        status === 'false_report' ? 'bg-red-400' :
+        'bg-green-400'
       )} />
-      {status}
+      {status === 'false_report' ? 'False Report' : status}
     </span>
   );
 }
@@ -112,15 +115,16 @@ export function MedicalDashboard() {
     const shouldDeactivate = next >= 3;
 
     const batch = writeBatch(db);
-    const alertData = { status: 'false_report' as any, falseReportBy: profile.name, falseReportTime: firestoreTimestamp() };
-    batch.update(doc(db, 'agency_alerts_medical', alert.id), alertData);
-    batch.update(doc(db, 'users', alert.userId, 'alerts', alert.id), alertData);
-    batch.update(doc(db, 'all_alerts', alert.id), alertData);
+    const alertData = { status: 'false_report' as AlertStatus, falseReportBy: profile.name, falseReportTime: firestoreTimestamp() };
+    // Use set+merge so the batch never fails due to a missing document
+    batch.set(doc(db, 'agency_alerts_medical', alert.id), alertData, { merge: true });
+    batch.set(doc(db, 'users', alert.userId, 'alerts', alert.id), alertData, { merge: true });
+    batch.set(doc(db, 'all_alerts', alert.id), alertData, { merge: true });
 
     // Update user: increment falseReportCount, deactivate if threshold reached
     const userUpdate: Record<string, any> = { falseReportCount: next };
     if (shouldDeactivate) userUpdate.isDeactivated = true;
-    batch.update(userRef, userUpdate);
+    batch.set(userRef, userUpdate, { merge: true });
 
     // Write in-app warning notification to the user
     const notifRef = doc(fsCollection(db, 'users', alert.userId, 'notifications'));
@@ -301,7 +305,7 @@ export function MedicalDashboard() {
                             <CheckCircle2 className="h-4 w-4" /> Patient Stabilized
                           </Button>
                         )}
-                        {alert.status !== 'resolved' && alert.status !== 'false_report' as any && (
+                        {alert.status !== 'resolved' && alert.status !== 'false_report' && (
                           <Button variant="outline" size="sm"
                             onClick={() => markFalseReport(alert)}
                             className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 gap-1.5 font-bold">
