@@ -883,22 +883,58 @@ export function UserDashboard() {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-slate-900/40 border-white/5 rounded-[3rem] p-10 space-y-10 shadow-2xl">
-                  <div className="space-y-4">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-primary">Grid Telemetry</h3>
-                    <p className="text-3xl font-black text-white italic tracking-tighter uppercase leading-none">Secure Protocol</p>
+                <Card className="bg-slate-900/40 border-white/5 rounded-2xl p-6 space-y-5 shadow-2xl">
+                  {/* Header */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">System Status</h3>
+                      <p className="text-xl font-black text-white mt-1">Your Account</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
+                      <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                      <span className="text-[11px] font-bold text-green-400">Online</span>
+                    </div>
                   </div>
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.3em]">
-                      <span className="text-slate-500">Latency</span><span className="text-green-500">0.4ms</span>
+
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { label: 'Total Reports', value: alerts.length, color: 'text-white' },
+                      { label: 'Pending', value: alerts.filter(a => a.status === 'pending').length, color: 'text-yellow-400' },
+                      { label: 'Resolved', value: alerts.filter(a => a.status === 'resolved').length, color: 'text-green-400' },
+                    ].map(s => (
+                      <div key={s.label} className="bg-slate-800/50 rounded-xl p-3 text-center border border-white/5">
+                        <p className={`text-2xl font-black ${s.color}`}>{s.value}</p>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wide mt-0.5">{s.label}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Account health */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-400 font-semibold">Account Standing</span>
+                      <span className={profile?.falseReportCount ? 'text-yellow-400 font-bold' : 'text-green-400 font-bold'}>
+                        {profile?.falseReportCount ? `${profile.falseReportCount}/3 violations` : 'Good Standing'}
+                      </span>
                     </div>
-                    <div className="h-2 w-full bg-slate-950 rounded-full overflow-hidden">
-                      <div className="h-full bg-primary w-full animate-pulse shadow-[0_0_15px_rgba(37,99,235,0.8)]" />
+                    <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          (profile?.falseReportCount ?? 0) >= 2 ? 'bg-red-500' :
+                          (profile?.falseReportCount ?? 0) >= 1 ? 'bg-yellow-500' : 'bg-green-500'
+                        }`}
+                        style={{ width: `${Math.max(5, ((profile?.falseReportCount ?? 0) / 3) * 100)}%` }}
+                      />
                     </div>
-                    <div className="p-6 bg-slate-950/80 rounded-[2rem] border border-white/5 flex gap-5 mt-10 shadow-inner">
-                      <Info className="h-6 w-6 text-primary shrink-0" />
-                      <p className="text-[10px] font-bold text-slate-500 leading-relaxed uppercase tracking-tight">Biometric Mesh link established. Satellite position optimized for real-time response.</p>
-                    </div>
+                  </div>
+
+                  {/* Info row */}
+                  <div className="flex items-start gap-3 p-3 bg-slate-800/40 rounded-xl border border-white/5">
+                    <Info className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                      Your reports are sent directly to the relevant response office. Always provide accurate information.
+                    </p>
                   </div>
                 </Card>
               </div>
