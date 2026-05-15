@@ -249,12 +249,115 @@ export function MedicalDashboard() {
                     <h3 className="text-lg font-bold text-white">All Clear</h3>
                     <p className="text-sm text-slate-400 mt-1">No active medical incidents</p>
                   </div>
-                ) : alerts.map(alert => (
+                ) : alerts.map(alert => {
+                  const photo = (alert as any).photoEvidenceUrl || mediaMap[alert.id]?.photoEvidenceUrl;
+                  const voice = (alert as any).voiceNoteUrl || mediaMap[alert.id]?.voiceNoteUrl;
+                  const isPending = alert.status === 'pending';
+                  const isResponding = alert.status === 'responding';
+                  const isResolved = alert.status === 'resolved';
+                  const isFalse = alert.status === 'false_report';
+                  return (
                   <div key={alert.id} className={cn(
                     "rounded-2xl border overflow-hidden transition-all duration-300",
-                    alert.status === 'pending' ? 'bg-red-500/5 border-red-500/30 shadow-[0_0_20px_rgba(239,68,68,0.08)]' :
-                    alert.status === 'responding' ? 'bg-blue-500/5 border-blue-500/20' : 'bg-slate-900/40 border-white/5'
+                    isPending ? 'bg-red-500/5 border-red-500/40 shadow-[0_0_24px_rgba(239,68,68,0.12)]' :
+                    isResponding ? 'bg-blue-500/5 border-blue-500/30' :
+                    isFalse ? 'bg-red-900/10 border-red-900/30' :
+                    'bg-slate-900/40 border-white/5'
                   )}>
+                    <div className={cn("h-1 w-full", isPending ? 'bg-red-500' : isResponding ? 'bg-blue-500' : isFalse ? 'bg-red-700' : 'bg-slate-700')} />
+                    <div className="p-4 sm:p-5 space-y-4">
+                      {/* Header */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={cn("h-11 w-11 rounded-2xl flex items-center justify-center flex-shrink-0", isPending ? 'bg-red-500/20' : isResponding ? 'bg-blue-500/20' : 'bg-slate-800')}>
+                            {(alert as any).userPhotoURL
+                              ? <img src={(alert as any).userPhotoURL} alt="" className="h-11 w-11 rounded-2xl object-cover" />
+                              : <HeartPulse className={cn("h-5 w-5", isPending ? 'text-red-400' : isResponding ? 'text-blue-400' : 'text-slate-500')} />}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-base font-black text-white truncate">{alert.userName}</span>
+                              {isPending && <span className="text-[10px] font-bold text-red-400 bg-red-500/15 px-2 py-0.5 rounded-full animate-pulse shrink-0">CRITICAL</span>}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5 text-[11px] text-slate-400">
+                              <span className="flex items-center gap-1"><MapPin className="h-3 w-3 shrink-0" />{alert.location ? `${alert.location.lat.toFixed(4)}, ${alert.location.lng.toFixed(4)}` : 'No GPS'}</span>
+                              <span className="flex items-center gap-1"><Clock className="h-3 w-3 shrink-0" />{alert.timestamp?.seconds ? format(alert.timestamp.toDate(), 'MMM d, h:mm a') : 'Live'}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <StatusBadge status={alert.status} />
+                      </div>
+                      {/* Reporter info */}
+                      <div className="rounded-xl bg-slate-800/50 border border-white/5 p-3">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Reporter Info</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-xs">
+                          {[
+                            { label: 'Name', value: alert.userName },
+                            (alert as any).userAge && { label: 'Age', value: (alert as any).userAge },
+                            (alert as any).userSex && { label: 'Sex', value: (alert as any).userSex },
+                            (alert as any).userEmail && { label: 'Email', value: (alert as any).userEmail },
+                            (alert as any).exactAddress && { label: 'Address', value: (alert as any).exactAddress },
+                          ].filter(Boolean).map((item: any) => (
+                            <div key={item.label} className="min-w-0">
+                              <p className="text-slate-500 text-[10px] uppercase tracking-wide">{item.label}</p>
+                              <p className="text-white font-semibold truncate mt-0.5">{item.value}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      {photo && (
+                        <div className="rounded-xl overflow-hidden border border-white/10">
+                          <div className="flex items-center justify-between px-3 py-2 bg-slate-800/60 border-b border-white/5">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Photo Evidence</p>
+                            <a href={photo} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-400 hover:text-blue-300 font-semibold">View full →</a>
+                          </div>
+                          <a href={photo} target="_blank" rel="noopener noreferrer">
+                            <img src={photo} alt="Photo evidence" className="w-full max-h-48 object-cover hover:opacity-90 transition-opacity cursor-zoom-in" />
+                          </a>
+                        </div>
+                      )}
+                      {voice && (
+                        <div className="rounded-xl border border-white/10 bg-slate-800/50 overflow-hidden">
+                          <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5">
+                            <Activity className="h-3.5 w-3.5 text-slate-400" />
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Voice Note</p>
+                          </div>
+                          <div className="px-3 py-2"><audio src={voice} controls className="w-full h-8" /></div>
+                        </div>
+                      )}
+                      {alert.responderName && (
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                          <User className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                          <span className="text-xs text-blue-300 font-bold truncate">Responding: {alert.responderName}</span>
+                        </div>
+                      )}
+                      {alert.aiAnalysis ? (
+                        <div className="p-3 rounded-xl bg-slate-900/60 border border-red-500/10">
+                          <div className="flex items-center gap-2 mb-2"><BrainCircuit className="h-3.5 w-3.5 text-red-400 shrink-0" /><span className="text-[10px] font-bold text-red-400 uppercase tracking-widest">AI Triage Analysis</span></div>
+                          <p className="text-xs text-slate-300 leading-relaxed">{alert.aiAnalysis}</p>
+                        </div>
+                      ) : (
+                        <Button variant="outline" size="sm" className="w-full border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-400 font-bold gap-2" onClick={() => performAIAnalysis(alert)} disabled={analyzingId === alert.id}>
+                          {analyzingId === alert.id ? <Zap className="h-4 w-4 animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
+                          {analyzingId === alert.id ? 'Analyzing...' : 'Run AI Triage Analysis'}
+                        </Button>
+                      )}
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {isPending && <Button onClick={() => updateStatus(alert, 'responding')} className="flex-1 min-w-[120px] bg-red-600 hover:bg-red-500 text-white font-bold gap-2 h-10"><Navigation className="h-4 w-4" /> Dispatch Unit</Button>}
+                        {isResponding && <Button onClick={() => updateStatus(alert, 'resolved')} className="flex-1 min-w-[120px] bg-green-600 hover:bg-green-500 text-white font-bold gap-2 h-10"><CheckCircle2 className="h-4 w-4" /> Patient Stabilized</Button>}
+                        {!isResolved && !isFalse && <Button variant="outline" size="sm" onClick={() => markFalseReport(alert)} className="h-10 border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 gap-1.5 font-bold"><AlertTriangle className="h-3.5 w-3.5" /> False Report</Button>}
+                        {(isResolved || isFalse) && <Button variant="outline" size="sm" onClick={() => deleteAlert(alert)} className="h-10 border-white/10 text-slate-500 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 gap-1.5"><Trash2 className="h-3.5 w-3.5" /> Delete</Button>}
+                        {alert.location && (
+                          <Button variant="outline" size="sm" className="h-10 border-white/10 text-slate-400 hover:text-white hover:bg-white/5 gap-1.5"
+                            onClick={() => { const { lat, lng } = alert.location!; if (navigator.geolocation) { navigator.geolocation.getCurrentPosition(pos => window.open(`https://www.google.com/maps/dir/${pos.coords.latitude},${pos.coords.longitude}/${lat},${lng}`, '_blank'), () => window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank')); } else window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank'); }}>
+                            <MapPin className="h-4 w-4" /> View on Map
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  );
+                })
                     <div className={cn("h-1 w-full",
                       alert.status === 'pending' ? 'bg-red-500' :
                       alert.status === 'responding' ? 'bg-blue-500' : 'bg-slate-700'
@@ -394,22 +497,6 @@ export function MedicalDashboard() {
                                     const dest = `${lat},${lng}`;
                                     window.open(`https://www.google.com/maps/dir/${origin}/${dest}`, '_blank');
                                   },
-                                  () => {
-                                    window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank');
-                                  }
-                                );
-                              } else {
-                                window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank');
-                              }
-                            }}
-                          >
-                            <MapPin className="h-4 w-4" /> View on Map
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
               </div>
 
               {/* Right panel */}
