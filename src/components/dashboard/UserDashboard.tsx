@@ -1198,116 +1198,77 @@ export function UserDashboard() {
               <AlertDialogHeader className="sr-only">
                 <AlertDialogTitle>Report Emergency</AlertDialogTitle>
               </AlertDialogHeader>
-              {/* Map preview — static tile to avoid Leaflet SSR issues in dialog */}
-              <div className="h-44 w-full relative overflow-hidden bg-slate-800">
-                {userLocation ? (
-                  // eslint-disable-next-line @next/next/no-img-element
+
+              {/* Map preview — only shown when GPS acquired */}
+              {gpsStatus === 'acquired' && userLocation && (
+                <div className="h-28 w-full relative overflow-hidden bg-slate-800">
                   <img
-                    src={`https://staticmap.openstreetmap.de/staticmap.php?center=${userLocation[0]},${userLocation[1]}&zoom=14&size=400x176&markers=${userLocation[0]},${userLocation[1]},red`}
+                    src={`https://staticmap.openstreetmap.de/staticmap.php?center=${userLocation[0]},${userLocation[1]}&zoom=14&size=400x112&markers=${userLocation[0]},${userLocation[1]},red`}
                     alt="Location map"
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      // Fallback to a simple colored div if static map fails
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                   />
-                ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                    <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
-                    <p className="text-xs text-slate-500 font-bold">Acquiring GPS...</p>
-                  </div>
-                )}
-                {/* Overlay gradient at bottom */}
-                <div className="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-[#0d1526] to-transparent" />
-              </div>
+                  <div className="absolute bottom-0 inset-x-0 h-6 bg-gradient-to-t from-[#0d1526] to-transparent" />
+                </div>
+              )}
 
-              <div className="p-5 space-y-4">
+              <div className="p-5 space-y-3">
                 {/* Alert type header */}
-                <div className="flex flex-col items-center gap-2 text-center">
+                <div className="flex items-center gap-3">
                   <div className={cn(
-                    "h-12 w-12 rounded-2xl flex items-center justify-center",
+                    "h-11 w-11 rounded-2xl flex items-center justify-center flex-shrink-0",
                     selectedType === 'fire' ? 'bg-orange-500/20' :
                     selectedType === 'police' ? 'bg-blue-500/20' :
                     selectedType === 'medical' ? 'bg-red-500/20' : 'bg-slate-700/50'
                   )}>
-                    {selectedType === 'fire' && <Flame className="h-6 w-6 text-orange-400" />}
-                    {selectedType === 'police' && <Shield className="h-6 w-6 text-blue-400" />}
-                    {selectedType === 'medical' && <Activity className="h-6 w-6 text-red-400" />}
-                    {selectedType === 'all' && <AlertTriangle className="h-6 w-6 text-yellow-400" />}
+                    {selectedType === 'fire' && <Flame className="h-5 w-5 text-orange-400" />}
+                    {selectedType === 'police' && <Shield className="h-5 w-5 text-blue-400" />}
+                    {selectedType === 'medical' && <Activity className="h-5 w-5 text-red-400" />}
+                    {selectedType === 'all' && <AlertTriangle className="h-5 w-5 text-yellow-400" />}
                   </div>
-                  <h2 className="text-lg font-black text-white uppercase tracking-widest">
-                    {selectedType === 'all' ? 'All Agencies' : selectedType === 'medical' ? 'Rescue & Medical' : selectedType} Alert
-                  </h2>
-                  <div className="flex items-center gap-1.5 text-xs text-slate-400 text-center">
-                    <MapPin className="h-3 w-3 flex-shrink-0" />
-                    <span className="line-clamp-2">
-                      {gpsStatus === 'acquired' && exactAddress
-                        ? exactAddress
-                        : gpsStatus === 'acquired' && userLocation
-                        ? `${userLocation[0].toFixed(4)}, ${userLocation[1].toFixed(4)}`
-                        : 'Detecting location...'}
-                    </span>
+                  <div className="min-w-0">
+                    <h2 className="text-base font-black text-white uppercase tracking-widest leading-tight">
+                      {selectedType === 'all' ? 'All Agencies' : selectedType === 'medical' ? 'Rescue & Medical' : selectedType} Alert
+                    </h2>
+                    <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-0.5">
+                      <MapPin className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">
+                        {gpsStatus === 'acquired' && exactAddress
+                          ? exactAddress.slice(0, 50)
+                          : gpsStatus === 'acquired' && userLocation
+                          ? `${userLocation[0].toFixed(4)}, ${userLocation[1].toFixed(4)}`
+                          : 'Detecting location...'}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Location status — responsive to GPS state */}
+                {/* Location status */}
                 <div className="space-y-1.5">
                   {gpsStatus === 'acquired' && userLocation ? (
-                    /* GPS success — green pill */
-                    <div className="flex items-start justify-between px-3 py-2.5 rounded-xl bg-green-500/10 border border-green-500/20">
+                    <div className="flex items-start justify-between px-3 py-2 rounded-xl bg-green-500/10 border border-green-500/20">
                       <div className="flex items-start gap-2 text-xs text-green-400 font-semibold flex-1 min-w-0">
                         <MapPin className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
                         <span className="line-clamp-2">{exactAddress || `${userLocation[0].toFixed(4)}, ${userLocation[1].toFixed(4)}`}</span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => { setGpsStatus('denied'); setUserLocation(null); setExactAddress(''); }}
-                        className="text-[10px] text-slate-400 hover:text-white font-semibold ml-2 flex-shrink-0"
-                      >
-                        Override
-                      </button>
+                      <button type="button" onClick={() => { setGpsStatus('denied'); setUserLocation(null); setExactAddress(''); }} className="text-[10px] text-slate-400 hover:text-white font-semibold ml-2 flex-shrink-0">Override</button>
                     </div>
                   ) : gpsStatus === 'acquiring' || gpsStatus === 'idle' ? (
-                    /* GPS acquiring — spinner pill, no manual input */
-                    <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-800/50 border border-white/8">
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800/50 border border-white/8">
                       <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-400 flex-shrink-0" />
                       <span className="text-xs text-slate-400 font-semibold">Acquiring GPS location...</span>
                     </div>
                   ) : (
-                    /* GPS denied — manual input + retry */
                     <>
-                      <Input
-                        placeholder="Enter your location manually..."
-                        value={manualLocation}
-                        onChange={e => setManualLocation(e.target.value)}
-                        className="bg-slate-800/50 border-white/10 text-white text-sm h-10 rounded-xl placeholder:text-slate-500"
-                        autoFocus
-                      />
+                      <Input placeholder="Enter your location manually..." value={manualLocation} onChange={e => setManualLocation(e.target.value)} className="bg-slate-800/50 border-white/10 text-white text-sm h-10 rounded-xl placeholder:text-slate-500" autoFocus />
                       <div className="flex items-center justify-between">
-                        <p className="text-xs text-yellow-400 flex items-center gap-1">
-                          <AlertTriangle className="h-3 w-3" /> GPS unavailable — type your location
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setGpsStatus('acquiring');
-                            navigator.geolocation?.getCurrentPosition(
-                              pos => { setUserLocation([pos.coords.latitude, pos.coords.longitude]); setGpsStatus('acquired'); },
-                              () => setGpsStatus('denied'),
-                              { timeout: 8000, enableHighAccuracy: true }
-                            );
-                          }}
-                          className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1"
-                        >
-                          <Navigation className="h-3 w-3" /> Retry GPS
-                        </button>
+                        <p className="text-xs text-yellow-400 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> GPS unavailable</p>
+                        <button type="button" onClick={() => { setGpsStatus('acquiring'); navigator.geolocation?.getCurrentPosition(pos => { setUserLocation([pos.coords.latitude, pos.coords.longitude]); setGpsStatus('acquired'); }, () => setGpsStatus('denied'), { timeout: 8000, enableHighAccuracy: true }); }} className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1"><Navigation className="h-3 w-3" /> Retry GPS</button>
                       </div>
                     </>
                   )}
-                  <p className="text-xs text-slate-500 text-center">Agency will be notified immediately.</p>
+                  <p className="text-[11px] text-slate-500 text-center">Agency will be notified immediately.</p>
                 </div>
-
-                {/* Warning */}
                 <div className="flex items-start gap-2.5 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
                   <AlertTriangle className="h-4 w-4 text-yellow-400 flex-shrink-0 mt-0.5" />
                   <p className="text-xs text-yellow-300 leading-relaxed">
