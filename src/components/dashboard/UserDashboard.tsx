@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Flame, Shield, Activity, AlertTriangle, Star, Zap, Info, Radio, Menu, MapPin, Clock, Loader2, Navigation, ClipboardList, Camera, Bell, BellOff, X, Mic, MicOff, Square } from 'lucide-react';
+import { Flame, Shield, Activity, AlertTriangle, Star, Zap, Info, Radio, Menu, MapPin, Clock, Loader2, Navigation, ClipboardList, Camera, Bell, BellOff, X, Mic, MicOff, Square, Stethoscope } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -295,10 +295,10 @@ export function UserDashboard() {
   };
 
   const emergencyButtons = [
-    { type: 'fire' as const, color: 'bg-[#f97316]', icon: Flame, title: 'FIRE', subtitle: 'Bureau of Fire Protection' },
-    { type: 'crime' as const, color: 'bg-[#2563eb]', icon: Shield, title: 'POLICE', subtitle: 'Philippine National Police' },
-    { type: 'medical' as const, color: 'bg-[#dc2626]', icon: Activity, title: 'RESCUE & MEDICAL', subtitle: 'Emergency Medical Services' },
-    { type: 'all' as const, color: 'bg-[#1e293b]', icon: AlertTriangle, title: 'ALL AGENCIES', subtitle: 'BFP + PNP + EMS' },
+    { type: 'fire' as const, color: 'bg-[#f97316]', icon: AlertTriangle, title: 'DRRM', subtitle: 'Disaster Risk Reduction' },
+    { type: 'crime' as const, color: 'bg-[#2563eb]', icon: Shield, title: 'SECURITY', subtitle: 'School Security Office' },
+    { type: 'medical' as const, color: 'bg-[#dc2626]', icon: Stethoscope, title: 'CLINIC', subtitle: 'School Medical Office' },
+    { type: 'all' as const, color: 'bg-[#1e293b]', icon: AlertTriangle, title: 'ALL OFFICES', subtitle: 'Security + DRRM + Clinic' },
   ];
 
   const satelliteMapImg = PlaceHolderImages.find(img => img.id === 'satellite-map')?.imageUrl;
