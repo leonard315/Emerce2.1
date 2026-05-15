@@ -115,9 +115,10 @@ export function FireDashboard() {
     } else {
       data.resolvedTime = firestoreTimestamp();
     }
-    batch.update(doc(db, 'agency_alerts_fire', alert.id), data);
-    batch.update(doc(db, 'users', alert.userId, 'alerts', alert.id), data);
-    batch.update(doc(db, 'all_alerts', alert.id), data);
+    // Use set+merge so old alerts that may be missing from a collection don't fail the batch
+    batch.set(doc(db, 'agency_alerts_fire', alert.id), data, { merge: true });
+    batch.set(doc(db, 'users', alert.userId, 'alerts', alert.id), data, { merge: true });
+    batch.set(doc(db, 'all_alerts', alert.id), data, { merge: true });
     await batch.commit();
     toast({ title: `Alert marked as ${status}` });
     if (rtdb) {
@@ -340,6 +341,20 @@ export function FireDashboard() {
                           </div>
                         </div>
 
+                        {/* Photo Evidence */}
+                        {(alert as any).photoEvidenceUrl && (
+                          <div className="mb-4 rounded-xl overflow-hidden border border-white/10">
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 py-2 bg-slate-800/60 border-b border-white/5">Photo Evidence</p>
+                            <a href={(alert as any).photoEvidenceUrl} target="_blank" rel="noopener noreferrer">
+                              <img
+                                src={(alert as any).photoEvidenceUrl}
+                                alt="Photo evidence"
+                                className="w-full max-h-56 object-cover hover:opacity-90 transition-opacity cursor-zoom-in"
+                              />
+                            </a>
+                          </div>
+                        )}
+
                         {/* Responder info */}
                         {alert.responderName && (
                           <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20">
@@ -382,7 +397,7 @@ export function FireDashboard() {
                               <Navigation className="h-4 w-4" /> Respond
                             </Button>
                           )}
-                          {alert.status === 'responding' && (
+                          {(alert.status === 'responding' || alert.status === 'pending') && (
                             <Button
                               onClick={() => updateStatus(alert, 'resolved')}
                               className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold gap-2 shadow-lg shadow-green-900/30"

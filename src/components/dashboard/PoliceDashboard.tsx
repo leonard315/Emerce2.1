@@ -112,9 +112,9 @@ export function PoliceDashboard() {
     } else {
       data.resolvedTime = firestoreTimestamp();
     }
-    batch.update(doc(db, 'agency_alerts_police', alert.id), data);
-    batch.update(doc(db, 'users', alert.userId, 'alerts', alert.id), data);
-    batch.update(doc(db, 'all_alerts', alert.id), data);
+    batch.set(doc(db, 'agency_alerts_police', alert.id), data, { merge: true });
+    batch.set(doc(db, 'users', alert.userId, 'alerts', alert.id), data, { merge: true });
+    batch.set(doc(db, 'all_alerts', alert.id), data, { merge: true });
     await batch.commit();
     toast({ title: `Alert marked as ${status}` });
     if (rtdb) {
@@ -301,6 +301,20 @@ export function PoliceDashboard() {
                           </div>
                         </div>
 
+                        {/* Photo Evidence */}
+                        {(alert as any).photoEvidenceUrl && (
+                          <div className="mb-4 rounded-xl overflow-hidden border border-white/10">
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 py-2 bg-slate-800/60 border-b border-white/5">Photo Evidence</p>
+                            <a href={(alert as any).photoEvidenceUrl} target="_blank" rel="noopener noreferrer">
+                              <img
+                                src={(alert as any).photoEvidenceUrl}
+                                alt="Photo evidence"
+                                className="w-full max-h-56 object-cover hover:opacity-90 transition-opacity cursor-zoom-in"
+                              />
+                            </a>
+                          </div>
+                        )}
+
                         {alert.responderName && (
                           <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-xl bg-purple-500/10 border border-purple-500/20">
                             <User className="h-3.5 w-3.5 text-purple-400" />
@@ -334,7 +348,7 @@ export function PoliceDashboard() {
                               <Navigation className="h-4 w-4" /> Respond
                             </Button>
                           )}
-                          {alert.status === 'responding' && (
+                          {(alert.status === 'responding' || alert.status === 'pending') && (
                             <Button onClick={() => updateStatus(alert, 'resolved')}
                               className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold gap-2 shadow-lg shadow-green-900/30">
                               <CheckCircle2 className="h-4 w-4" /> Mark Resolved

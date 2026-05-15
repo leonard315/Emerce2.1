@@ -157,6 +157,18 @@ export function UserDashboard() {
     }
 
     const alertId = doc(collection(db, 'temp')).id;
+
+    // Upload photo evidence as base64 if provided
+    let photoEvidenceUrl: string | null = null;
+    if (photoEvidence) {
+      try {
+        const { resizeImageToBase64 } = await import('@/lib/resize-image');
+        photoEvidenceUrl = await resizeImageToBase64(photoEvidence, 800, 0.8);
+      } catch {
+        toast({ variant: 'destructive', title: 'Photo upload failed', description: 'Alert sent without photo.' });
+      }
+    }
+
     const baseAlertData = {
       id: alertId,
       userId: profile.uid,
@@ -170,6 +182,7 @@ export function UserDashboard() {
       location,
       status: 'pending' as const,
       timestamp: firestoreTimestamp(),
+      ...(photoEvidenceUrl ? { photoEvidenceUrl } : {}),
     };
 
     const batch = writeBatch(db);
