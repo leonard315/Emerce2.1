@@ -11,7 +11,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from "@/hooks/use-toast";
 import {
   ShieldCheck, CheckCircle2, Navigation, MapPin, Zap, BrainCircuit,
-  Radio, Clock, User, ChevronRight, AlertTriangle
+  Radio, Clock, User, ChevronRight, AlertTriangle, Trash2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { analyzeSituation } from '@/ai/flows/analyze-situation-flow';
@@ -68,10 +68,14 @@ export function PoliceDashboard() {
   useEffect(() => {
     if (isLoading) return;
     const pending = alerts.filter(a => a.status === 'pending').length;
-    if (prevCountRef.current !== null && pending > prevCountRef.current) {
+    if (prevCountRef.current === null) {
+      prevCountRef.current = pending;
+      return;
+    }
+    if (pending > prevCountRef.current) {
       playNewIncident('police');
       playSiren('police');
-    } else if (prevCountRef.current !== null && pending < prevCountRef.current) {
+    } else if (pending < prevCountRef.current) {
       stopSiren();
     }
     prevCountRef.current = pending;
@@ -176,6 +180,21 @@ export function PoliceDashboard() {
         ? `${alert.userName}'s account has been deactivated (3 false reports).`
         : `${alert.userName} now has ${next}/3 false report violation${next > 1 ? 's' : ''}.`,
     });
+  };
+
+  const deleteAlert = async (alert: EmergencyAlert) => {
+    if (!db) return;
+    try {
+      const { deleteDoc } = await import('firebase/firestore');
+      await Promise.all([
+        deleteDoc(doc(db, 'agency_alerts_police', alert.id)),
+        deleteDoc(doc(db, 'users', alert.userId, 'alerts', alert.id)).catch(() => {}),
+        deleteDoc(doc(db, 'all_alerts', alert.id)).catch(() => {}),
+      ]);
+      toast({ title: 'Alert deleted' });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Delete failed', description: e.message });
+    }
   };
 
   return (
@@ -349,7 +368,7 @@ export function PoliceDashboard() {
                               <Navigation className="h-4 w-4" /> Respond
                             </Button>
                           )}
-                          {(alert.status === 'responding' || alert.status === 'pending') && (
+                          {alert.status === 'responding' && (
                             <Button onClick={() => updateStatus(alert, 'resolved')}
                               className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold gap-2 shadow-lg shadow-green-900/30">
                               <CheckCircle2 className="h-4 w-4" /> Mark Resolved
@@ -360,6 +379,13 @@ export function PoliceDashboard() {
                               onClick={() => markFalseReport(alert)}
                               className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 gap-1.5 font-bold">
                               <AlertTriangle className="h-3.5 w-3.5" /> False Report
+                            </Button>
+                          )}
+                          {(alert.status === 'resolved' || alert.status === 'false_report') && (
+                            <Button variant="outline" size="sm"
+                              onClick={() => deleteAlert(alert)}
+                              className="border-white/10 text-slate-500 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 gap-1.5">
+                              <Trash2 className="h-3.5 w-3.5" /> Delete
                             </Button>
                           )}
                           {alert.location && (
@@ -376,7 +402,6 @@ export function PoliceDashboard() {
                                       window.open(`https://www.google.com/maps/dir/${origin}/${dest}`, '_blank');
                                     },
                                     () => {
-                                      // No GPS — just show the destination
                                       window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank');
                                     }
                                   );

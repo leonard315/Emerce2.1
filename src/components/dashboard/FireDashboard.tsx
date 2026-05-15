@@ -11,7 +11,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from "@/hooks/use-toast";
 import {
   Flame, CheckCircle2, Navigation, MapPin, Zap, BrainCircuit,
-  Radio, Activity, Clock, User, AlertTriangle, ChevronRight
+  Radio, Activity, Clock, User, AlertTriangle, ChevronRight, Trash2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { analyzeSituation } from '@/ai/flows/analyze-situation-flow';
@@ -69,11 +69,16 @@ export function FireDashboard() {
   useEffect(() => {
     if (isLoading) return; // wait for real Firestore snapshot before establishing baseline
     const pending = alerts.filter(a => a.status === 'pending').length;
-    if (prevCountRef.current !== null && pending > prevCountRef.current) {
+    if (prevCountRef.current === null) {
+      // First real snapshot — set baseline silently, no sound
+      prevCountRef.current = pending;
+      return;
+    }
+    if (pending > prevCountRef.current) {
       // New pending alert arrived — play sound
       playNewIncident('fire');
       playSiren('fire');
-    } else if (prevCountRef.current !== null && pending < prevCountRef.current) {
+    } else if (pending < prevCountRef.current) {
       // A pending alert was responded to or marked false — stop siren
       stopSiren();
     }
@@ -180,6 +185,21 @@ export function FireDashboard() {
         ? `${alert.userName}'s account has been deactivated (3 false reports).`
         : `${alert.userName} now has ${next}/3 false report violation${next > 1 ? 's' : ''}.`,
     });
+  };
+
+  const deleteAlert = async (alert: EmergencyAlert) => {
+    if (!db) return;
+    try {
+      const { deleteDoc } = await import('firebase/firestore');
+      await Promise.all([
+        deleteDoc(doc(db, 'agency_alerts_fire', alert.id)),
+        deleteDoc(doc(db, 'users', alert.userId, 'alerts', alert.id)).catch(() => {}),
+        deleteDoc(doc(db, 'all_alerts', alert.id)).catch(() => {}),
+      ]);
+      toast({ title: 'Alert deleted' });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Delete failed', description: e.message });
+    }
   };
 
   return (
@@ -398,7 +418,7 @@ export function FireDashboard() {
                               <Navigation className="h-4 w-4" /> Respond
                             </Button>
                           )}
-                          {(alert.status === 'responding' || alert.status === 'pending') && (
+                          {alert.status === 'responding' && (
                             <Button
                               onClick={() => updateStatus(alert, 'resolved')}
                               className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold gap-2 shadow-lg shadow-green-900/30"
@@ -414,6 +434,16 @@ export function FireDashboard() {
                               className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 gap-1.5 font-bold"
                             >
                               <AlertTriangle className="h-3.5 w-3.5" /> False Report
+                            </Button>
+                          )}
+                          {(alert.status === 'resolved' || alert.status === 'false_report') && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => deleteAlert(alert)}
+                              className="border-white/10 text-slate-500 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 gap-1.5"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" /> Delete
                             </Button>
                           )}
                           {alert.location && (

@@ -2,7 +2,8 @@
 
 // Loaded only via dynamic(..., { ssr: false }) — safe to import Leaflet here
 import 'leaflet/dist/leaflet.css';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { EmergencyAlert } from '@/lib/types';
 
 function createColoredIcon(color: string) {
@@ -22,6 +23,15 @@ function createColoredIcon(color: string) {
     iconAnchor: [12, 24],
     popupAnchor: [0, -26],
   });
+}
+
+// Recenter map when alerts change
+function MapUpdater({ center, zoom }: { center: [number, number]; zoom: number }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, zoom, { animate: true });
+  }, [center[0], center[1], zoom]);
+  return null;
 }
 
 interface SectorMapProps {
@@ -46,6 +56,7 @@ export default function SectorMap({ activeAlerts, alertColor, agencyLabel }: Sec
       attributionControl={false}
     >
       <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+      <MapUpdater center={center} zoom={zoom} />
       {activeAlerts.map(alert =>
         alert.location ? (
           <Marker
