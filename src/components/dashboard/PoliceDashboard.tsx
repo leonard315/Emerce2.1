@@ -397,23 +397,6 @@ export function PoliceDashboard() {
                     );
                   })
                 )}
-                      <div className={cn("h-1 w-full",
-                        alert.status === 'pending' ? 'bg-blue-500' :
-                        alert.status === 'responding' ? 'bg-purple-500' : 'bg-slate-700'
-                      )} />
-                      <div className="p-5">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-start gap-3">
-                            <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0",
-                              alert.status === 'pending' ? 'bg-blue-500/15' :
-                              alert.status === 'responding' ? 'bg-purple-500/15' : 'bg-slate-800'
-                            )}>
-                              <ShieldCheck className={cn("h-5 w-5",
-                                alert.status === 'pending' ? 'text-blue-400' :
-                                alert.status === 'responding' ? 'text-purple-400' : 'text-slate-500'
-                              )} />
-                            </div>
-                ))}
               </div>
 
               <div className="space-y-4">
