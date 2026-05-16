@@ -1,8 +1,7 @@
 "use client";
 
-// Loaded only via dynamic(..., { ssr: false }) — safe to import Leaflet here
 import 'leaflet/dist/leaflet.css';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { EmergencyAlert } from '@/lib/types';
 
@@ -25,12 +24,29 @@ function createColoredIcon(color: string) {
   });
 }
 
-// Recenter map when alerts change
-function MapUpdater({ center, zoom }: { center: [number, number]; zoom: number }) {
+// Recenters only when a new alert arrives, not on every render
+function MapUpdater({ alerts }: { alerts: EmergencyAlert[] }) {
   const map = useMap();
+  const prevCountRef = useRef(0);
+
   useEffect(() => {
-    map.setView(center, zoom, { animate: true });
-  }, [center[0], center[1], zoom]);
+    const withLocation = alerts.filter(a => a.location);
+    if (withLocation.length > prevCountRef.current) {
+      const newest = withLocation[withLocation.length - 1];
+      if (newest?.location) {
+        map.flyTo([newest.location.lat, newest.location.lng], 14, { animate: true, duration: 1 });
+      }
+    } else if (withLocation.length > 0 && prevCountRef.current === 0) {
+      if (withLocation.length === 1) {
+        map.setView([withLocation[0].location!.lat, withLocation[0].location!.lng], 14, { animate: true });
+      } else {
+        const bounds = withLocation.map(a => [a.location!.lat, a.location!.lng] as [number, number]);
+        map.fitBounds(bounds, { padding: [30, 30], animate: true });
+      }
+    }
+    prevCountRef.current = withLocation.length;
+  }, [alerts.length]);
+
   return null;
 }
 
@@ -41,22 +57,17 @@ interface SectorMapProps {
 }
 
 export default function SectorMap({ activeAlerts, alertColor, agencyLabel }: SectorMapProps) {
-  const center: [number, number] = activeAlerts[0]?.location
-    ? [activeAlerts[0].location.lat, activeAlerts[0].location.lng]
-    : [12.8797, 121.774];
-  const zoom = activeAlerts[0]?.location ? 13 : 7;
-
   return (
     <MapContainer
-      center={center}
-      zoom={zoom}
+      center={[12.8797, 121.774]}
+      zoom={7}
       style={{ height: '100%', width: '100%' }}
       zoomControl={false}
       scrollWheelZoom={false}
       attributionControl={false}
     >
       <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
-      <MapUpdater center={center} zoom={zoom} />
+      <MapUpdater alerts={activeAlerts} />
       {activeAlerts.map(alert =>
         alert.location ? (
           <Marker
@@ -65,12 +76,15 @@ export default function SectorMap({ activeAlerts, alertColor, agencyLabel }: Sec
             icon={createColoredIcon(alertColor)}
           >
             <Popup>
-              <div style={{ minWidth: 140 }}>
+              <div style={{ minWidth: 160 }}>
                 <p style={{ fontWeight: 'bold', fontSize: 12, marginBottom: 4 }}>{agencyLabel}</p>
-                <p style={{ fontSize: 11, color: '#555' }}>{alert.userName}</p>
-                <p style={{ fontSize: 10, color: '#888', marginTop: 2 }}>
-                  {alert.location.lat.toFixed(4)}, {alert.location.lng.toFixed(4)}
+                <p style={{ fontSize: 11, color: '#444', marginBottom: 2 }}>{alert.userName}</p>
+                <p style={{ fontSize: 10, color: '#888' }}>
+                  {alert.location.lat.toFixed(5)}, {alert.location.lng.toFixed(5)}
                 </p>
+                {(alert as any).exactAddress && (
+                  <p style={{ fontSize: 10, color: '#666', marginTop: 2 }}>{(alert as any).exactAddress}</p>
+                )}
               </div>
             </Popup>
           </Marker>

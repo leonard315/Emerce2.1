@@ -1,7 +1,7 @@
 "use client";
 
 import 'leaflet/dist/leaflet.css';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 
 interface Alert {
@@ -40,14 +40,31 @@ function createColoredIcon(color: string) {
   });
 }
 
+// Only recenters when a NEW alert arrives (count increases), not on every render
 function MapUpdater({ alerts }: { alerts: Alert[] }) {
   const map = useMap();
+  const prevCountRef = useRef(0);
+
   useEffect(() => {
-    const first = alerts.find(a => a.location);
-    if (first?.location) {
-      map.setView([first.location.lat, first.location.lng], 13, { animate: true });
+    const withLocation = alerts.filter(a => a.location);
+    if (withLocation.length > prevCountRef.current) {
+      // New alert — fly to it
+      const newest = withLocation[withLocation.length - 1];
+      if (newest?.location) {
+        map.flyTo([newest.location.lat, newest.location.lng], 14, { animate: true, duration: 1 });
+      }
+    } else if (withLocation.length > 0 && prevCountRef.current === 0) {
+      // First load with alerts — fit all markers
+      const bounds = withLocation.map(a => [a.location!.lat, a.location!.lng] as [number, number]);
+      if (bounds.length === 1) {
+        map.setView(bounds[0], 14, { animate: true });
+      } else {
+        map.fitBounds(bounds, { padding: [40, 40], animate: true });
+      }
     }
-  }, [alerts.map(a => a.id).join(',')]); // re-center whenever alert list changes
+    prevCountRef.current = withLocation.length;
+  }, [alerts.length]);
+
   return null;
 }
 
@@ -57,8 +74,8 @@ export default function AdminLiveMap({ activeAlerts }: AdminLiveMapProps) {
       center={[12.8797, 121.774]}
       zoom={7}
       style={{ height: '100%', width: '100%' }}
-      zoomControl={false}
-      scrollWheelZoom={false}
+      zoomControl={true}
+      scrollWheelZoom={true}
       attributionControl={false}
     >
       <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
@@ -71,11 +88,14 @@ export default function AdminLiveMap({ activeAlerts }: AdminLiveMapProps) {
             icon={createColoredIcon(TYPE_COLORS[alert.type] || '#ef4444')}
           >
             <Popup>
-              <div style={{ minWidth: 140 }}>
+              <div style={{ minWidth: 160 }}>
                 <p style={{ fontWeight: 'bold', fontSize: 12, marginBottom: 4 }}>
-                  {alert.type.toUpperCase()} Emergency
+                  {alert.type.toUpperCase()} Incident
                 </p>
-                <p style={{ fontSize: 11, color: '#555' }}>{alert.userName}</p>
+                <p style={{ fontSize: 11, color: '#444', marginBottom: 2 }}>{alert.userName}</p>
+                <p style={{ fontSize: 10, color: '#888' }}>
+                  {alert.location.lat.toFixed(5)}, {alert.location.lng.toFixed(5)}
+                </p>
               </div>
             </Popup>
           </Marker>
