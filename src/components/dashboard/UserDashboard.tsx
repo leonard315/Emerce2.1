@@ -221,6 +221,10 @@ export function UserDashboard() {
 
     const alertId = doc(collection(db, 'temp')).id;
 
+    // Get description from textarea
+    const descriptionEl = document.getElementById('incident-description') as HTMLTextAreaElement;
+    const description = descriptionEl?.value?.trim() || null;
+
     // Compress photo aggressively — target < 200KB base64
     let photoEvidenceUrl: string | null = null;
     if (photoEvidence) {
@@ -247,6 +251,7 @@ export function UserDashboard() {
       timestamp: firestoreTimestamp(),
       hasPhoto: !!photoEvidenceUrl,
       hasVoice: !!voiceNote,
+      ...(description ? { description } : {}),
     };
 
     const batch = writeBatch(db);
@@ -1226,6 +1231,7 @@ export function UserDashboard() {
                     <div>
                       <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Full Name</Label>
                       <Input
+                        id="profile-name-input"
                         defaultValue={profile?.name || ''}
                         className="mt-2 bg-slate-800/50 border-white/10 text-white rounded-xl h-12"
                       />
@@ -1239,7 +1245,20 @@ export function UserDashboard() {
                         disabled
                       />
                     </div>
-                    <Button className="w-full h-12 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl">
+                    <Button
+                      className="w-full h-12 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl"
+                      onClick={async () => {
+                        const input = document.getElementById('profile-name-input') as HTMLInputElement;
+                        const newName = input?.value?.trim();
+                        if (!newName || !profile || !db) return;
+                        try {
+                          await setDoc(doc(db, 'users', profile.uid), { name: newName }, { merge: true });
+                          toast({ title: 'Profile updated', description: 'Your name has been saved.' });
+                        } catch (e: any) {
+                          toast({ variant: 'destructive', title: 'Update failed', description: e.message });
+                        }
+                      }}
+                    >
                       Update Profile
                     </Button>
                   </div>
@@ -1382,6 +1401,14 @@ export function UserDashboard() {
                     <span className="font-black">False reports are prohibited.</span> Sending fake alerts may result in account suspension after 3 violations.
                   </p>
                 </div>
+
+                {/* Incident description — optional */}
+                <textarea
+                  id="incident-description"
+                  placeholder="Describe what's happening... (optional)"
+                  rows={2}
+                  className="w-full bg-slate-800/50 border border-white/10 text-white text-xs rounded-xl px-3 py-2.5 placeholder:text-slate-500 resize-none focus:outline-none focus:border-white/20"
+                />
 
                 {/* Photo evidence — REQUIRED */}
                 <div className="space-y-1">

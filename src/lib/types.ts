@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'user' | 'fire' | 'police' | 'medical';
+export type UserRole = 'admin' | 'user' | 'fire' | 'police' | 'medical' | 'security' | 'drrm' | 'clinic' | 'school_user';
 
 export interface UserProfile {
   uid: string;
@@ -15,7 +15,7 @@ export interface UserProfile {
 
 export interface UserNotification {
   id: string;
-  type: 'warning' | 'deactivated';
+  type: 'warning' | 'deactivated' | 'status_update';
   title: string;
   message: string;
   timestamp: any;
@@ -36,6 +36,7 @@ export interface EmergencyAlert {
   exactAddress?: string;
   type: EmergencyType;
   color: string;
+  description?: string;
   location: {
     lat: number;
     lng: number;
@@ -48,6 +49,8 @@ export interface EmergencyAlert {
   resolvedTime?: any;
   aiAnalysis?: string;
   photoEvidenceUrl?: string;
+  hasPhoto?: boolean;
+  hasVoice?: boolean;
 }
 
 export interface SystemLog {

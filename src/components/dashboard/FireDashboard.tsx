@@ -133,10 +133,24 @@ export function FireDashboard() {
     } else {
       data.resolvedTime = firestoreTimestamp();
     }
-    // Use set+merge so old alerts that may be missing from a collection don't fail the batch
     batch.set(doc(db, 'agency_alerts_fire', alert.id), data, { merge: true });
     batch.set(doc(db, 'users', alert.userId, 'alerts', alert.id), data, { merge: true });
     batch.set(doc(db, 'all_alerts', alert.id), data, { merge: true });
+
+    // Notify reporter of status change
+    const { collection: fsCol } = await import('firebase/firestore');
+    const notifRef = doc(fsCol(db, 'users', alert.userId, 'notifications'));
+    batch.set(notifRef, {
+      id: notifRef.id,
+      type: 'status_update',
+      title: status === 'responding' ? 'Responder On The Way' : 'Incident Resolved',
+      message: status === 'responding'
+        ? `${profile.name} from DRRM is responding to your report.`
+        : `Your incident report has been resolved by ${profile.name}.`,
+      timestamp: firestoreTimestamp(),
+      read: false,
+    });
+
     await batch.commit();
     toast({ title: `Alert marked as ${status}` });
     if (rtdb) {
@@ -367,7 +381,52 @@ export function FireDashboard() {
                               </div>
                             ))}
                           </div>
+                          {/* Description */}
+                          {(alert as any).description && (
+                            <div className="mt-2 pt-2 border-t border-white/5">
+                              <p className="text-slate-500 text-[10px] uppercase tracking-wide mb-1">Description</p>
+                              <p className="text-white text-xs leading-relaxed">{(alert as any).description}</p>
+                            </div>
+                          )}
                         </div>
+
+                        {/* ── Incident Timeline ── */}
+                        {(alert.responseStartTime || alert.resolvedTime) && (
+                          <div className="rounded-xl bg-slate-800/50 border border-white/5 p-3">
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Timeline</p>
+                            <div className="space-y-1.5">
+                              <div className="flex items-center gap-2 text-xs">
+                                <span className="h-1.5 w-1.5 rounded-full bg-yellow-400 flex-shrink-0" />
+                                <span className="text-slate-400">Reported:</span>
+                                <span className="text-white font-semibold">{alert.timestamp?.seconds ? format(alert.timestamp.toDate(), 'MMM d, h:mm a') : '—'}</span>
+                              </div>
+                              {alert.responseStartTime?.seconds && (
+                                <div className="flex items-center gap-2 text-xs">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-blue-400 flex-shrink-0" />
+                                  <span className="text-slate-400">Responded:</span>
+                                  <span className="text-white font-semibold">{format(alert.responseStartTime.toDate(), 'MMM d, h:mm a')}</span>
+                                  {alert.timestamp?.seconds && (
+                                    <span className="text-slate-500 text-[10px]">
+                                      (+{Math.round((alert.responseStartTime.seconds - alert.timestamp.seconds) / 60)}m)
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              {alert.resolvedTime?.seconds && (
+                                <div className="flex items-center gap-2 text-xs">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-green-400 flex-shrink-0" />
+                                  <span className="text-slate-400">Resolved:</span>
+                                  <span className="text-white font-semibold">{format(alert.resolvedTime.toDate(), 'MMM d, h:mm a')}</span>
+                                  {alert.responseStartTime?.seconds && (
+                                    <span className="text-slate-500 text-[10px]">
+                                      (+{Math.round((alert.resolvedTime.seconds - alert.responseStartTime.seconds) / 60)}m)
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
 
                         {/* ── Photo Evidence ── */}
                         {photo && (
