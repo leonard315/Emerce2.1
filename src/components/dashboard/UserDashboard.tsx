@@ -948,78 +948,89 @@ export function UserDashboard() {
               {/* Header */}
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-2xl font-black text-white tracking-tight">My Incident Log</h1>
-                  <p className="text-xs text-slate-500 mt-0.5 uppercase tracking-widest">All your submitted emergency reports</p>
+                  <h1 className="text-2xl font-black text-white tracking-tight">My Reports</h1>
+                  <p className="text-xs text-slate-500 mt-0.5">All your submitted incident reports</p>
                 </div>
                 <Badge className="bg-slate-800 text-slate-400 border-white/10 text-xs font-bold px-3 py-1.5">
                   {alerts.length} {alerts.length === 1 ? 'report' : 'reports'}
                 </Badge>
               </div>
 
-              {/* Table card */}
-              <Card className="bg-slate-900/60 border-white/5 rounded-2xl overflow-hidden w-full">
-                <Table className="w-full">
-                  <TableHeader className="bg-white/5">
-                    <TableRow className="border-white/5 hover:bg-transparent">
-                      <TableHead className="px-6 h-12 font-black uppercase text-[10px] text-slate-500 tracking-widest">Signal Type</TableHead>
-                      <TableHead className="h-12 font-black uppercase text-[10px] text-slate-500 tracking-widest">Vector</TableHead>
-                      <TableHead className="h-12 font-black uppercase text-[10px] text-slate-500 tracking-widest">Response</TableHead>
-                      <TableHead className="px-6 h-12 font-black uppercase text-[10px] text-slate-500 tracking-widest text-right">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {alertsLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center py-20">
-                          <Loader2 className="h-6 w-6 animate-spin text-slate-600 mx-auto" />
-                        </TableCell>
-                      </TableRow>
-                    ) : alerts.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center py-24">
-                          <div className="flex flex-col items-center gap-3">
-                            <div className="h-14 w-14 rounded-2xl bg-slate-800/80 flex items-center justify-center">
-                              <ClipboardList className="h-7 w-7 text-slate-600" />
+              {/* Report cards */}
+              <div className="space-y-3">
+                {alertsLoading ? (
+                  <div className="flex items-center justify-center py-16">
+                    <Loader2 className="h-6 w-6 animate-spin text-slate-600" />
+                  </div>
+                ) : alerts.length === 0 ? (
+                  <div className="flex flex-col items-center gap-3 py-20 rounded-2xl bg-slate-900/40 border border-white/5">
+                    <div className="h-14 w-14 rounded-2xl bg-slate-800/80 flex items-center justify-center">
+                      <ClipboardList className="h-7 w-7 text-slate-600" />
+                    </div>
+                    <p className="text-sm font-bold text-slate-400">No reports yet</p>
+                    <p className="text-xs text-slate-600">Your incident reports will appear here</p>
+                  </div>
+                ) : alerts.map(alert => {
+                  const typeColor = alert.type === 'fire' ? 'bg-orange-500' : alert.type === 'crime' ? 'bg-blue-500' : 'bg-red-500';
+                  const typeLabel = alert.type === 'fire' ? 'DRRM' : alert.type === 'crime' ? 'Security' : 'Clinic';
+                  const typeBg = alert.type === 'fire' ? 'bg-orange-500/10' : alert.type === 'crime' ? 'bg-blue-500/10' : 'bg-red-500/10';
+                  const typeText = alert.type === 'fire' ? 'text-orange-400' : alert.type === 'crime' ? 'text-blue-400' : 'text-red-400';
+                  return (
+                    <div key={alert.id} className="bg-slate-900/60 border border-white/5 rounded-2xl p-4 space-y-3">
+                      {/* Top row */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={cn("h-2.5 w-2.5 rounded-full flex-shrink-0 mt-1", typeColor)} />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className={cn("text-xs font-black px-2 py-0.5 rounded-lg", typeBg, typeText)}>{typeLabel}</span>
+                              <span className="text-xs text-slate-500">
+                                {alert.timestamp?.seconds ? format(alert.timestamp.toDate(), 'MMM d, h:mm a') : 'Live'}
+                              </span>
                             </div>
-                            <p className="text-sm font-bold text-slate-400">No incidents logged</p>
-                            <p className="text-xs text-slate-600">Your emergency reports will appear here once submitted</p>
+                            {(alert as any).exactAddress && (
+                              <p className="text-xs text-slate-400 mt-1 truncate">{(alert as any).exactAddress}</p>
+                            )}
+                            {!((alert as any).exactAddress) && alert.location && (
+                              <p className="text-xs text-slate-500 mt-1 font-mono">{alert.location.lat.toFixed(4)}, {alert.location.lng.toFixed(4)}</p>
+                            )}
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ) : alerts.map(alert => (
-                      <TableRow key={alert.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                        <TableCell className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className={cn(
-                              "h-2.5 w-2.5 rounded-full flex-shrink-0",
-                              alert.type === 'fire' ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]' :
-                              alert.type === 'crime' ? 'bg-blue-500 shadow-[0_0_8px_rgba(37,99,235,0.6)]' :
-                              'bg-red-500 shadow-[0_0_8px_rgba(220,38,38,0.6)]'
-                            )} />
-                            <span className="text-sm font-bold text-white capitalize">{alert.type}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-xs font-mono text-slate-500">
-                          {alert.location ? `${alert.location.lat.toFixed(4)}, ${alert.location.lng.toFixed(4)}` : '—'}
-                        </TableCell>
-                        <TableCell className="text-xs font-semibold text-slate-400">
-                          {alert.responderName || 'Awaiting responder...'}
-                        </TableCell>
-                        <TableCell className="px-6 text-right">
-                          <Badge className={cn(
-                            "text-[10px] font-bold border-none px-3 py-1 rounded-lg",
-                            alert.status === 'pending' ? 'bg-red-500/10 text-red-400' :
-                            alert.status === 'responding' ? 'bg-blue-500/10 text-blue-400' :
-                            'bg-green-500/10 text-green-400'
-                          )}>
-                            {alert.status}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Card>
+                        </div>
+                        <Badge className={cn("text-[10px] font-bold border-none px-2.5 py-1 rounded-lg flex-shrink-0",
+                          alert.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400' :
+                          alert.status === 'responding' ? 'bg-blue-500/10 text-blue-400' :
+                          alert.status === 'resolved' ? 'bg-green-500/10 text-green-400' :
+                          'bg-red-500/10 text-red-400'
+                        )}>{alert.status}</Badge>
+                      </div>
+
+                      {/* Responder */}
+                      {alert.responderName && (
+                        <div className="flex items-center gap-2 text-xs text-slate-400">
+                          <Navigation className="h-3 w-3 text-blue-400 flex-shrink-0" />
+                          <span>Responder: <span className="text-white font-semibold">{alert.responderName}</span></span>
+                        </div>
+                      )}
+
+                      {/* Media row */}
+                      {((alert as any).hasPhoto || (alert as any).hasVoice || (alert as any).photoEvidenceUrl || (alert as any).voiceNoteUrl) && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {((alert as any).hasPhoto || (alert as any).photoEvidenceUrl) && (
+                            <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400 bg-slate-800 px-2 py-1 rounded-lg">
+                              <Camera className="h-3 w-3" /> Photo attached
+                            </span>
+                          )}
+                          {((alert as any).hasVoice || (alert as any).voiceNoteUrl) && (
+                            <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400 bg-slate-800 px-2 py-1 rounded-lg">
+                              <Mic className="h-3 w-3" /> Voice note attached
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
