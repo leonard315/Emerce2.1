@@ -846,42 +846,38 @@ export function UserDashboard() {
                     </Dialog>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <Table>
-                      <TableHeader className="bg-white/5">
-                        <TableRow className="border-b border-white/5">
-                          <TableHead className="px-5 h-11 font-bold text-[11px] text-slate-500 uppercase tracking-widest">Type</TableHead>
-                          <TableHead className="h-11 font-bold text-[11px] text-slate-500 uppercase tracking-widest">Time</TableHead>
-                          <TableHead className="px-5 h-11 font-bold text-[11px] text-slate-500 uppercase tracking-widest text-right">Status</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {alertsLoading ? (
-                          <TableRow><TableCell colSpan={3} className="text-center py-10"><Loader2 className="h-5 w-5 animate-spin text-slate-600 mx-auto" /></TableCell></TableRow>
-                        ) : alerts.length === 0 ? (
-                          <TableRow><TableCell colSpan={3} className="text-center py-10 text-slate-500 text-sm">No reports yet</TableCell></TableRow>
-                        ) : alerts.slice(0, 8).map((alert) => (
-                          <TableRow key={alert.id} className="border-b border-white/5 hover:bg-white/5">
-                            <TableCell className="px-5 py-3">
-                              <div className="flex items-center gap-2.5">
-                                <div className={cn("h-2 w-2 rounded-full flex-shrink-0", alert.type === 'fire' ? 'bg-orange-500' : alert.type === 'crime' ? 'bg-blue-500' : 'bg-red-500')} />
-                                <span className="text-sm font-bold text-white capitalize">{alert.type}</span>
+                    <div className="divide-y divide-white/5">
+                      {alertsLoading ? (
+                        <div className="py-8 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-slate-600" /></div>
+                      ) : alerts.length === 0 ? (
+                        <div className="py-10 text-center text-slate-500 text-sm">No reports yet</div>
+                      ) : alerts.slice(0, 8).map((alert) => {
+                        const typeLabel = alert.type === 'fire' ? 'DRRM' : alert.type === 'crime' ? 'Security' : 'Clinic';
+                        const dotColor = alert.type === 'fire' ? 'bg-orange-500' : alert.type === 'crime' ? 'bg-blue-500' : 'bg-red-500';
+                        return (
+                          <div key={alert.id} className="flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-colors">
+                            <div className={cn("h-2 w-2 rounded-full flex-shrink-0", dotColor)} />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-bold text-white">{typeLabel}</span>
+                                {((alert as any).hasPhoto || (alert as any).photoEvidenceUrl) && <Camera className="h-3 w-3 text-slate-500" />}
+                                {((alert as any).hasVoice || (alert as any).voiceNoteUrl) && <Mic className="h-3 w-3 text-slate-500" />}
                               </div>
-                            </TableCell>
-                            <TableCell className="text-xs text-slate-500">
-                              {alert.timestamp?.seconds ? format(alert.timestamp.toDate(), 'MMM d, h:mm a') : '—'}
-                            </TableCell>
-                            <TableCell className="px-5 text-right">
-                              <Badge className={cn("text-[10px] font-bold border-none rounded-lg px-2 py-0.5",
-                                alert.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400' :
-                                alert.status === 'responding' ? 'bg-blue-500/10 text-blue-400' :
-                                alert.status === 'resolved' ? 'bg-green-500/10 text-green-400' :
-                                'bg-red-500/10 text-red-400'
-                              )}>{alert.status}</Badge>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                              <p className="text-[10px] text-slate-500 mt-0.5">
+                                {alert.timestamp?.seconds ? format(alert.timestamp.toDate(), 'MMM d, h:mm a') : '—'}
+                                {alert.responderName && <span className="ml-2 text-blue-400">· {alert.responderName}</span>}
+                              </p>
+                            </div>
+                            <Badge className={cn("text-[10px] font-bold border-none rounded-lg px-2 py-0.5 flex-shrink-0",
+                              alert.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400' :
+                              alert.status === 'responding' ? 'bg-blue-500/10 text-blue-400' :
+                              alert.status === 'resolved' ? 'bg-green-500/10 text-green-400' :
+                              'bg-red-500/10 text-red-400'
+                            )}>{alert.status}</Badge>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </CardContent>
                 </Card>
 
