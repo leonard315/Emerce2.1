@@ -67,8 +67,8 @@ export function UserSidebar({ currentView, onViewChange }: UserSidebarProps) {
             <img src="/icons/logo.png" alt="Logo" className="w-full h-full object-cover" />
           </div>
           <div className="flex flex-col min-w-0">
-            <h2 className="text-sm font-bold text-white leading-tight tracking-tight truncate">Emergency Hotline</h2>
-            <p className="text-[10px] font-bold text-slate-500 mt-0.5 uppercase tracking-widest truncate">Alarm System</p>
+            <h2 className="text-sm font-bold text-white leading-tight tracking-tight truncate">School Emergency</h2>
+            <p className="text-[10px] font-bold text-slate-500 mt-0.5 uppercase tracking-widest truncate">Incident Reporting</p>
           </div>
         </div>
       </SidebarHeader>

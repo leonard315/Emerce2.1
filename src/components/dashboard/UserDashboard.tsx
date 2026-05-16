@@ -318,7 +318,7 @@ export function UserDashboard() {
             </button>
             <div className="flex items-center gap-2">
               <img src="/icons/logo.png" alt="Logo" className="w-7 h-7 rounded-lg object-cover" />
-              <span className="text-sm font-bold text-white">Emergency Hotline</span>
+              <span className="text-sm font-bold text-white">School Emergency</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -419,7 +419,7 @@ export function UserDashboard() {
               {/* Welcome */}
               <div className="bg-slate-900/60 rounded-2xl p-4 border border-white/5">
                 <h1 className="text-xl font-black text-white">Hi, {profile?.name} 👋</h1>
-                <p className="text-xs text-slate-500 mt-0.5 uppercase tracking-widest">Tap an emergency button to report instantly</p>
+                <p className="text-xs text-slate-500 mt-0.5 uppercase tracking-widest">Tap a button to report an incident</p>
               </div>
 
               {/* Emergency type label */}
@@ -1188,7 +1188,7 @@ export function UserDashboard() {
               <Card className="bg-slate-900/40 border-white/5 rounded-2xl p-8">
                 <div className="mb-6">
                   <h2 className="text-lg font-bold text-white">System Evaluation</h2>
-                  <p className="text-sm text-slate-400 mt-1">Help us improve the Emergency Hotline system</p>
+                  <p className="text-sm text-slate-400 mt-1">Help us improve the School Emergency system</p>
                 </div>
                 <div className="space-y-6">
                   <div className="space-y-3">
@@ -1259,14 +1259,17 @@ export function UserDashboard() {
                     selectedType === 'police' ? 'bg-blue-500/20' :
                     selectedType === 'medical' ? 'bg-red-500/20' : 'bg-slate-700/50'
                   )}>
-                    {selectedType === 'fire' && <Flame className="h-5 w-5 text-orange-400" />}
-                    {selectedType === 'police' && <Shield className="h-5 w-5 text-blue-400" />}
-                    {selectedType === 'medical' && <Activity className="h-5 w-5 text-red-400" />}
-                    {selectedType === 'all' && <AlertTriangle className="h-5 w-5 text-yellow-400" />}
+                    {selectedType === 'fire' && <AlertTriangle className="h-5 w-5 text-orange-400" />}
+                    {selectedType === 'crime' && <Shield className="h-5 w-5 text-blue-400" />}
+                    {selectedType === 'medical' && <Stethoscope className="h-5 w-5 text-red-400" />}
+                    {selectedType === 'all' && <AlertTriangle className="h-5 w-5 text-slate-400" />}
                   </div>
                   <div className="min-w-0">
                     <h2 className="text-base font-black text-white uppercase tracking-widest leading-tight">
-                      {selectedType === 'all' ? 'All Agencies' : selectedType === 'medical' ? 'Rescue & Medical' : selectedType} Alert
+                      {selectedType === 'all' ? 'All Offices' :
+                       selectedType === 'fire' ? 'DRRM' :
+                       selectedType === 'crime' ? 'Security' :
+                       'Clinic'} Alert
                     </h2>
                     <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-0.5">
                       <MapPin className="h-3 w-3 flex-shrink-0" />
