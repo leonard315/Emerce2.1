@@ -80,6 +80,31 @@ export function UserDashboard() {
     setMapMounted(true);
   }, []);
 
+  // ── Continuous GPS tracking ───────────────────────────────────────────────
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    const watchId = navigator.geolocation.watchPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setUserLocation([lat, lng]);
+        setGpsStatus('acquired');
+        // Update address only when location changes significantly (>50m)
+        setExactAddress(prev => {
+          // We'll update address lazily — don't block the state update
+          reverseGeocode(lat, lng).then(addr => setExactAddress(addr));
+          return prev;
+        });
+      },
+      () => {
+        // Don't set denied if we already have a location
+        setGpsStatus(prev => prev === 'acquired' ? 'acquired' : 'denied');
+      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -163,27 +188,35 @@ export function UserDashboard() {
     }
     setIsSubmitting(true);
     setConfirmOpen(false);
-    setGpsStatus('acquiring');
 
-    let location = null;
-    try {
-      toast({ title: "📍 Acquiring GPS...", description: "Getting your location for responders." });
-      const pos = await new Promise<GeolocationPosition>((res, rej) => 
-        navigator.geolocation.getCurrentPosition(res, rej, { timeout: 8000, enableHighAccuracy: true })
-      );
-      location = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      setUserLocation([pos.coords.latitude, pos.coords.longitude]);
-      setGpsStatus('acquired');
-      const address = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
-      setExactAddress(address);
-      toast({ title: "✅ Location acquired", description: address.slice(0, 60) });
-    } catch (e) {
-      setGpsStatus('denied');
-      toast({ 
-        variant: "destructive", 
-        title: "⚠️ Location unavailable", 
-        description: "Alert sent without GPS. Please enable location for faster response." 
-      });
+    // Use already-tracked GPS location, or request fresh if not available
+    let location: { lat: number; lng: number } | null = userLocation
+      ? { lat: userLocation[0], lng: userLocation[1] }
+      : null;
+
+    if (!location) {
+      setGpsStatus('acquiring');
+      try {
+        toast({ title: "📍 Acquiring GPS...", description: "Getting your location for responders." });
+        const pos = await new Promise<GeolocationPosition>((res, rej) =>
+          navigator.geolocation.getCurrentPosition(res, rej, { timeout: 8000, enableHighAccuracy: true })
+        );
+        location = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLocation([pos.coords.latitude, pos.coords.longitude]);
+        setGpsStatus('acquired');
+        const address = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+        setExactAddress(address);
+        toast({ title: "✅ Location acquired", description: address.slice(0, 60) });
+      } catch (e) {
+        setGpsStatus('denied');
+        toast({
+          variant: "destructive",
+          title: "⚠️ Location unavailable",
+          description: "Alert sent without GPS. Please enable location for faster response."
+        });
+      }
+    } else {
+      toast({ title: "📍 Location ready", description: exactAddress?.slice(0, 60) || `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}` });
     }
 
     const alertId = doc(collection(db, 'temp')).id;
