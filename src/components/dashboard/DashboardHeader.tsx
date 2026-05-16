@@ -88,31 +88,25 @@ export function DashboardHeader({ sidebarTrigger }: DashboardHeaderProps = {}) {
             </div>
           <div className="min-w-0">
             <p className="text-sm font-bold leading-tight tracking-tight text-white truncate">
-              Emergency Hotline
+              School Emergency
             </p>
             <p className="hidden sm:block text-[10px] text-slate-500 leading-tight tracking-wide truncate">
-              Smart Multi-Emergency Alarm System
+              School Incident Reporting System
             </p>
           </div>
         </Link>
       </div>
 
       {/* Center status badges — desktop only */}
-      <div className="hidden xl:flex items-center gap-4">
-        <Badge
-          variant="outline"
-          className="flex items-center gap-2 bg-green-500/5 text-green-500 border-green-500/20 py-1.5 font-bold text-[10px] uppercase tracking-widest px-3 rounded-xl"
-        >
-          <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-          Grid Active
-        </Badge>
-        <Badge
-          variant="secondary"
-          className="flex items-center gap-2 py-1.5 px-3 rounded-xl bg-slate-900 text-slate-300 border border-white/5 font-bold text-[10px] uppercase tracking-widest"
-        >
-          <Radio className="h-3 w-3 text-primary animate-pulse" />
-          <span className="text-white">{activeResponders}</span> nodes online
-        </Badge>
+      <div className="hidden xl:flex items-center gap-3">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
+          <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+          <span className="text-[11px] font-bold text-green-400">System Online</span>
+        </div>
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-800 border border-white/5">
+          <Radio className="h-3 w-3 text-blue-400" />
+          <span className="text-[11px] font-bold text-slate-300">{activeResponders} responder{activeResponders !== 1 ? 's' : ''} active</span>
+        </div>
       </div>
 
       {/* Right — user info + avatar dropdown */}
