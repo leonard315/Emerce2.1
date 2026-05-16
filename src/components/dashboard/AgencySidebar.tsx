@@ -34,6 +34,7 @@ import { Button } from "../ui/button";
 interface AgencySidebarProps {
   currentView: string;
   onViewChange: (view: string) => void;
+  pendingCount?: number;
 }
 
 const agencyConfig = {
@@ -66,7 +67,7 @@ const agencyConfig = {
   },
 } as const;
 
-export function AgencySidebar({ currentView, onViewChange }: AgencySidebarProps) {
+export function AgencySidebar({ currentView, onViewChange, pendingCount = 0 }: AgencySidebarProps) {
   const auth = useFirebase();
   const router = useRouter();
   const { profile } = useAuth();
@@ -85,7 +86,7 @@ export function AgencySidebar({ currentView, onViewChange }: AgencySidebarProps)
   };
 
   const navItems = [
-    { title: "Dashboard", view: "dashboard", icon: LayoutDashboard },
+    { title: "Dashboard", view: "dashboard", icon: LayoutDashboard, badge: pendingCount > 0 ? pendingCount : 0 },
     { title: "Live Map", view: "map", icon: Map, href: "/map" },
     { title: "My Profile", view: "profile", icon: UserCircle },
     { title: "Settings", view: "settings", icon: Settings },
@@ -135,7 +136,12 @@ export function AgencySidebar({ currentView, onViewChange }: AgencySidebarProps)
                           "h-5 w-5 flex-shrink-0 transition-colors",
                           currentView === item.view ? config.activeIcon : "text-slate-500"
                         )} />
-                        <span className="text-sm font-semibold">{item.title}</span>
+                        <span className="text-sm font-semibold flex-1">{item.title}</span>
+                        {(item as any).badge > 0 && (
+                          <span className="h-5 min-w-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center">
+                            {(item as any).badge > 99 ? '99+' : (item as any).badge}
+                          </span>
+                        )}
                       </div>
                     </SidebarMenuButton>
                   )}

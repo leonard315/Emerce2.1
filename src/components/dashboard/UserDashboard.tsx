@@ -450,16 +450,16 @@ export function UserDashboard() {
                     }}
                     disabled={isSubmitting || isDeactivated}
                     className={cn(
-                      "group relative flex items-center gap-3 rounded-xl px-4 py-3.5 transition-all active:scale-95 overflow-hidden text-left",
+                      "group relative aspect-square rounded-3xl flex flex-col items-center justify-center gap-3 transition-all active:scale-95 overflow-hidden",
                       btn.color,
                       isDeactivated && "opacity-40 cursor-not-allowed"
                     )}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <btn.icon className="h-7 w-7 text-white relative z-10 flex-shrink-0" strokeWidth={1.5} />
-                    <div className="relative z-10 min-w-0">
-                      <span className="text-sm font-black text-white tracking-wide block leading-tight">{btn.title}</span>
-                      <span className="text-[10px] text-white/70 font-medium block mt-0.5 truncate">{btn.subtitle}</span>
+                    <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <btn.icon className="h-10 w-10 text-white relative z-10" strokeWidth={1.5} />
+                    <div className="text-center relative z-10 px-3">
+                      <span className="text-lg font-black text-white tracking-wide block leading-tight">{btn.title}</span>
+                      <span className="text-[10px] font-medium block text-white/70 mt-0.5">{btn.subtitle}</span>
                     </div>
                   </button>
                 ))}
@@ -794,17 +794,17 @@ export function UserDashboard() {
                       }}
                       disabled={isSubmitting || isDeactivated}
                       className={cn(
-                        "group relative flex items-center gap-3 rounded-xl px-4 py-3.5 transition-all duration-200 active:scale-95 overflow-hidden text-left",
+                        "group relative aspect-square rounded-3xl flex flex-col items-center justify-center gap-3 transition-all duration-200 active:scale-95 overflow-hidden",
                         btn.color,
-                        "hover:brightness-110",
+                        "hover:brightness-110 hover:scale-[1.02]",
                         isDeactivated && "opacity-40 cursor-not-allowed"
                       )}
                     >
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                      <btn.icon className="h-7 w-7 text-white relative z-10 flex-shrink-0" strokeWidth={1.5} />
-                      <div className="relative z-10 min-w-0">
-                        <span className="text-sm font-black text-white tracking-wide block leading-tight">{btn.title}</span>
-                        <span className="text-[10px] text-white/70 font-medium block mt-0.5 truncate">{btn.subtitle}</span>
+                      <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <btn.icon className="h-10 w-10 text-white relative z-10" strokeWidth={1.5} />
+                      <div className="text-center relative z-10 px-4">
+                        <span className="text-lg font-black text-white tracking-wide block leading-tight">{btn.title}</span>
+                        <span className="text-xs text-white/70 font-medium mt-1 block">{btn.subtitle}</span>
                       </div>
                     </button>
                   ))}

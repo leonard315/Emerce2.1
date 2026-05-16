@@ -55,6 +55,7 @@ export function FireDashboard() {
   const { toast } = useToast();
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState("dashboard");
+  const [falseReportConfirm, setFalseReportConfirm] = useState<EmergencyAlert | null>(null);
 
   const alertsQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -215,7 +216,7 @@ export function FireDashboard() {
 
   return (
     <SidebarProvider style={{ '--sidebar-width': '18rem' } as React.CSSProperties}>
-      <AgencySidebar currentView={currentView} onViewChange={setCurrentView} />
+      <AgencySidebar currentView={currentView} onViewChange={setCurrentView} pendingCount={pendingAlerts.length} />
       <SidebarInset className="bg-[#080d1a] border-l border-white/5 overflow-y-auto h-screen min-w-0 flex-1 w-0">
 
         {/* ── Profile view ─────────────────────────────────────────────────── */}
@@ -436,7 +437,7 @@ export function FireDashboard() {
                             </Button>
                           )}
                           {!isResolved && !isFalse && (
-                            <Button variant="outline" size="sm" onClick={() => markFalseReport(alert)}
+                            <Button variant="outline" size="sm" onClick={() => setFalseReportConfirm(alert)}
                               className="h-10 border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 gap-1.5 font-bold">
                               <AlertTriangle className="h-3.5 w-3.5" /> False Report
                             </Button>

@@ -237,7 +237,24 @@ export function AdminDashboard() {
     if (!selectedUser || !db || editRole === selectedUser.role) return;
     setSavingRole(true);
     try {
-      await setDoc(doc(db, 'users', selectedUser.uid), { role: editRole }, { merge: true });
+      const batch = writeBatch(db);
+      // Update user doc
+      batch.set(doc(db, 'users', selectedUser.uid), { role: editRole }, { merge: true });
+      // Remove from old role collection
+      const oldRoleCol = selectedUser.role === 'admin' ? 'roles_admin'
+        : selectedUser.role === 'fire' ? 'roles_fire_agency'
+        : selectedUser.role === 'police' ? 'roles_police_agency'
+        : selectedUser.role === 'medical' ? 'roles_medical_agency'
+        : 'roles_general_users';
+      batch.delete(doc(db, oldRoleCol, selectedUser.uid));
+      // Add to new role collection
+      const newRoleCol = editRole === 'admin' ? 'roles_admin'
+        : editRole === 'fire' ? 'roles_fire_agency'
+        : editRole === 'police' ? 'roles_police_agency'
+        : editRole === 'medical' ? 'roles_medical_agency'
+        : 'roles_general_users';
+      batch.set(doc(db, newRoleCol, selectedUser.uid), { active: true });
+      await batch.commit();
       toast({ title: 'Role updated', description: `${selectedUser.name} is now ${editRole}` });
       setSelectedUser(prev => prev ? { ...prev, role: editRole as any } : null);
     } catch (e: any) {
@@ -396,7 +413,23 @@ export function AdminDashboard() {
                   <Clock className="h-3.5 w-3.5" />
                   <span>Avg response: <span className="text-white font-bold">2 min</span></span>
                 </div>
-                <Button variant="ghost" size="sm" className="h-7 text-xs text-green-400 hover:text-green-300 gap-1.5">
+                <Button variant="ghost" size="sm" className="h-7 text-xs text-green-400 hover:text-green-300 gap-1.5"
+                  onClick={() => {
+                    const rows = [
+                      ['ID', 'Type', 'User', 'Status', 'Location', 'Time', 'Responder'],
+                      ...alerts.map(a => [
+                        a.id, a.type, a.userName, a.status,
+                        a.location ? `${a.location.lat.toFixed(5)},${a.location.lng.toFixed(5)}` : '',
+                        a.timestamp?.seconds ? new Date(a.timestamp.seconds * 1000).toISOString() : '',
+                        a.responderName || '',
+                      ])
+                    ];
+                    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a'); a.href = url; a.download = `alerts-${Date.now()}.csv`; a.click();
+                    URL.revokeObjectURL(url);
+                  }}>
                   <FileDown className="h-3.5 w-3.5" /> Export CSV
                 </Button>
               </div>
@@ -951,7 +984,7 @@ export function AdminDashboard() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-900 border-white/10 rounded-xl">
-                    {['user', 'fire', 'police', 'medical', 'admin'].map(r => (
+                    {['user', 'fire', 'police', 'medical', 'security', 'drrm', 'clinic', 'admin'].map(r => (
                       <SelectItem key={r} value={r} className="text-white capitalize hover:bg-white/5">
                         {r}
                       </SelectItem>
