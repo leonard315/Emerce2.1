@@ -534,38 +534,64 @@ export function UserDashboard() {
           )}
 
           {currentView === 'reports' && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <h1 className="text-xl font-black text-white">My Reports</h1>
-              <div className="bg-slate-900/60 rounded-2xl border border-white/5 overflow-hidden">
-                {alerts.length === 0 ? (
-                  <div className="py-12 text-center text-slate-500 text-sm">No reports yet</div>
-                ) : alerts.map(alert => (
-                  <div key={alert.id} className="flex items-center gap-3 px-4 py-3 border-b border-white/5 last:border-0">
-                    <div className={cn("h-8 w-8 rounded-xl flex items-center justify-center flex-shrink-0",
-                      alert.type === 'fire' ? 'bg-orange-500/20' : alert.type === 'crime' ? 'bg-blue-500/20' : 'bg-red-500/20'
-                    )}>
-                      {alert.type === 'fire' ? <Flame className="h-4 w-4 text-orange-400" /> :
-                       alert.type === 'crime' ? <Shield className="h-4 w-4 text-blue-400" /> :
-                       <Activity className="h-4 w-4 text-red-400" />}
+              {alerts.length === 0 ? (
+                <div className="py-12 text-center text-slate-500 text-sm rounded-2xl bg-slate-900/40 border border-white/5">No reports yet</div>
+              ) : alerts.map(alert => {
+                const typeLabel = alert.type === 'fire' ? 'DRRM' : alert.type === 'crime' ? 'Security' : 'Clinic';
+                const typeColor = alert.type === 'fire' ? 'bg-orange-500' : alert.type === 'crime' ? 'bg-blue-500' : 'bg-red-500';
+                const typeBg = alert.type === 'fire' ? 'bg-orange-500/10 text-orange-400' : alert.type === 'crime' ? 'bg-blue-500/10 text-blue-400' : 'bg-red-500/10 text-red-400';
+                return (
+                  <div key={alert.id} className="bg-slate-900/60 rounded-2xl border border-white/5 p-4 space-y-3">
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className={cn("h-2 w-2 rounded-full flex-shrink-0 mt-1", typeColor)} />
+                        <div className="min-w-0">
+                          <span className={cn("text-xs font-black px-2 py-0.5 rounded-lg", typeBg)}>{typeLabel}</span>
+                          <p className="text-[10px] text-slate-500 mt-1">
+                            {alert.timestamp?.seconds ? format(alert.timestamp.toDate(), 'MMM d, h:mm a') : 'Live'}
+                          </p>
+                          {(alert as any).exactAddress && <p className="text-xs text-slate-400 mt-0.5 truncate">{(alert as any).exactAddress}</p>}
+                        </div>
+                      </div>
+                      <Badge className={cn("text-[10px] font-bold border-none rounded-lg px-2 py-0.5 flex-shrink-0",
+                        alert.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400' :
+                        alert.status === 'responding' ? 'bg-blue-500/10 text-blue-400' :
+                        alert.status === 'resolved' ? 'bg-green-500/10 text-green-400' :
+                        'bg-red-500/10 text-red-400'
+                      )}>{alert.status}</Badge>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-white capitalize">{alert.type} Emergency</p>
-                      <p className="text-xs text-slate-500 truncate">
-                        {alert.location ? `${alert.location.lat.toFixed(4)}, ${alert.location.lng.toFixed(4)}` : 'No GPS'} · {alert.timestamp?.seconds ? format(alert.timestamp.toDate(), 'MMM d, h:mm a') : ''}
-                      </p>
-                      {alert.responderName && <p className="text-xs text-blue-400 font-semibold">Responder: {alert.responderName}</p>}
-                    </div>
-                    <Badge className={cn("text-[10px] font-bold border-none flex-shrink-0",
-                      alert.status === 'pending' ? 'bg-red-500/10 text-red-400' :
-                      alert.status === 'responding' ? 'bg-blue-500/10 text-blue-400' :
-                      'bg-green-500/10 text-green-400'
-                    )}>{alert.status}</Badge>
+
+                    {/* Responder */}
+                    {alert.responderName && (
+                      <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                        <Navigation className="h-3 w-3 text-blue-400 flex-shrink-0" />
+                        <span>Responder: <span className="text-white font-semibold">{alert.responderName}</span></span>
+                      </div>
+                    )}
+
+                    {/* Photo evidence */}
+                    {(alert as any).hasPhoto && (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800/50 border border-white/10">
+                        <Camera className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                        <span className="text-xs text-slate-400">Photo evidence attached</span>
+                      </div>
+                    )}
+
+                    {/* Voice note */}
+                    {(alert as any).hasVoice && (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800/50 border border-white/10">
+                        <Mic className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                        <span className="text-xs text-slate-400">Voice note attached</span>
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
           )}
-
           {currentView === 'map' && (
             <div className="space-y-4">
               <h1 className="text-xl font-black text-white">Live Map</h1>
