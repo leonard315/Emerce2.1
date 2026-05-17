@@ -108,11 +108,19 @@ export function UserDashboard() {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mr = new MediaRecorder(stream);
+      // Detect supported MIME type — Safari needs audio/mp4, Chrome/Firefox use audio/webm
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : MediaRecorder.isTypeSupported('audio/mp4')
+        ? 'audio/mp4'
+        : '';
+      const mr = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
       audioChunksRef.current = [];
       mr.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
       mr.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const blob = new Blob(audioChunksRef.current, { type: mr.mimeType || 'audio/webm' });
         const reader = new FileReader();
         reader.onload = () => setVoiceNote(reader.result as string);
         reader.readAsDataURL(blob);

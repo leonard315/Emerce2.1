@@ -138,8 +138,7 @@ export function FireDashboard() {
     batch.set(doc(db, 'all_alerts', alert.id), data, { merge: true });
 
     // Notify reporter of status change
-    const { collection: fsCol } = await import('firebase/firestore');
-    const notifRef = doc(fsCol(db, 'users', alert.userId, 'notifications'));
+    const notifRef = doc(collection(db, 'users', alert.userId, 'notifications'));
     batch.set(notifRef, {
       id: notifRef.id,
       type: 'status_update',
