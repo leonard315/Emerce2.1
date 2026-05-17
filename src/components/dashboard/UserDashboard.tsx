@@ -598,11 +598,47 @@ export function UserDashboard() {
             </div>
           )}
           {currentView === 'map' && (
-            <div className="space-y-4">
-              <h1 className="text-xl font-black text-white">Live Map</h1>
-              <Card className="bg-[#020617] border-white/5 rounded-2xl overflow-hidden h-[400px]">
-                {mapMounted && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h1 className="text-xl font-black text-white">Live Map</h1>
+                <div className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold",
+                  gpsStatus === 'acquired' ? 'bg-green-500/10 border border-green-500/20 text-green-400' :
+                  gpsStatus === 'acquiring' ? 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-400' :
+                  'bg-red-500/10 border border-red-500/20 text-red-400'
+                )}>
+                  <span className={cn("h-1.5 w-1.5 rounded-full",
+                    gpsStatus === 'acquired' ? 'bg-green-500 animate-pulse' :
+                    gpsStatus === 'acquiring' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'
+                  )} />
+                  {gpsStatus === 'acquired' ? 'GPS Active' : gpsStatus === 'acquiring' ? 'Acquiring...' : 'GPS Off'}
+                </div>
+              </div>
+
+              {userLocation && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900/60 border border-white/5 text-xs text-slate-400">
+                  <MapPin className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" />
+                  <span className="truncate">{exactAddress || `${userLocation[0].toFixed(5)}, ${userLocation[1].toFixed(5)}`}</span>
+                </div>
+              )}
+
+              <Card className="bg-[#020617] border-white/5 rounded-2xl overflow-hidden h-[400px] relative">
+                {mapMounted ? (
                   <UserLiveMap userLocation={userLocation} />
+                ) : (
+                  <div className="h-full flex items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
+                  </div>
+                )}
+                {gpsStatus === 'denied' && (
+                  <div className="absolute bottom-4 inset-x-4 bg-slate-900/95 border border-red-500/30 rounded-xl p-3 flex items-center gap-3">
+                    <AlertTriangle className="h-4 w-4 text-red-400 flex-shrink-0" />
+                    <p className="text-xs text-slate-300 flex-1">Location access denied. Enable GPS in browser settings.</p>
+                    <button
+                      onClick={() => { setGpsStatus('acquiring'); navigator.geolocation?.getCurrentPosition(pos => { setUserLocation([pos.coords.latitude, pos.coords.longitude]); setGpsStatus('acquired'); }, () => setGpsStatus('denied'), { enableHighAccuracy: true }); }}
+                      className="text-xs text-blue-400 font-bold flex-shrink-0"
+                    >Retry</button>
+                  </div>
                 )}
               </Card>
             </div>
@@ -1095,72 +1131,71 @@ export function UserDashboard() {
           )}
 
           {currentView === "map" && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-black text-white uppercase tracking-tighter italic">My Location Map</h1>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-white/10 text-white hover:bg-white/5 gap-2"
-                  onClick={() => {
-                    setMapMounted(false);
-                    setTimeout(() => setMapMounted(true), 100);
-                    if (navigator.geolocation) {
-                      navigator.geolocation.getCurrentPosition(pos => {
-                        setUserLocation([pos.coords.latitude, pos.coords.longitude]);
-                      });
-                    }
-                  }}
-                >
-                  <Navigation className="h-4 w-4" /> Refresh Location
-                </Button>
+                <div>
+                  <h1 className="text-2xl font-black text-white tracking-tight">Live Map</h1>
+                  <p className="text-xs text-slate-500 mt-0.5">Your real-time location</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold",
+                    gpsStatus === 'acquired' ? 'bg-green-500/10 border border-green-500/20 text-green-400' :
+                    gpsStatus === 'acquiring' ? 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-400' :
+                    'bg-red-500/10 border border-red-500/20 text-red-400'
+                  )}>
+                    <span className={cn("h-1.5 w-1.5 rounded-full",
+                      gpsStatus === 'acquired' ? 'bg-green-500 animate-pulse' :
+                      gpsStatus === 'acquiring' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'
+                    )} />
+                    {gpsStatus === 'acquired' ? 'GPS Active' : gpsStatus === 'acquiring' ? 'Acquiring GPS...' : 'GPS Unavailable'}
+                  </div>
+                  <Button variant="outline" size="sm" className="border-white/10 text-white hover:bg-white/5 gap-2"
+                    onClick={() => {
+                      setGpsStatus('acquiring');
+                      navigator.geolocation?.getCurrentPosition(
+                        async pos => {
+                          setUserLocation([pos.coords.latitude, pos.coords.longitude]);
+                          setGpsStatus('acquired');
+                          const addr = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+                          setExactAddress(addr);
+                        },
+                        () => setGpsStatus('denied'),
+                        { enableHighAccuracy: true, timeout: 8000 }
+                      );
+                    }}>
+                    <Navigation className="h-4 w-4" /> Locate Me
+                  </Button>
+                </div>
               </div>
 
-              {/* GPS status */}
-              {gpsStatus === 'denied' && (
-                <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-sm font-bold flex items-center gap-2">
-                  ⚠️ Location access denied. Enable GPS in browser settings for accurate emergency reporting.
-                </div>
-              )}
-              {gpsStatus === 'acquired' && userLocation && (
-                <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm font-bold flex items-center gap-2">
-                  ✅ GPS Active — {userLocation[0].toFixed(5)}, {userLocation[1].toFixed(5)}
+              {/* Address bar */}
+              {userLocation && (
+                <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-900/60 border border-white/5">
+                  <MapPin className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-white font-semibold truncate">{exactAddress || 'Getting address...'}</p>
+                    <p className="text-[11px] text-slate-500 font-mono mt-0.5">{userLocation[0].toFixed(6)}, {userLocation[1].toFixed(6)}</p>
+                  </div>
                 </div>
               )}
 
-              <Card className="bg-[#020617] border-white/5 rounded-[2rem] overflow-hidden h-[500px]">
-                {mapMounted && (
+              {gpsStatus === 'denied' && (
+                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-bold flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                  Location access denied. Enable GPS in your browser settings for accurate reporting.
+                </div>
+              )}
+
+              <Card className="bg-[#020617] border-white/5 rounded-2xl overflow-hidden h-[500px] relative">
+                {mapMounted ? (
                   <UserLiveMap userLocation={userLocation} />
+                ) : (
+                  <div className="h-full flex items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
+                  </div>
                 )}
               </Card>
-
-              {/* My alerts on map */}
-              <div className="space-y-3">
-                <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest">My Alert Locations</h2>
-                {alerts.filter(a => a.location).length === 0 ? (
-                  <p className="text-slate-500 text-sm">No alerts with GPS data yet.</p>
-                ) : (
-                  alerts.filter(a => a.location).map(alert => (
-                    <div key={alert.id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-900/40 border border-white/5">
-                      <div className={cn("h-2.5 w-2.5 rounded-full flex-shrink-0",
-                        alert.type === 'fire' ? 'bg-orange-500' :
-                        alert.type === 'crime' ? 'bg-blue-500' : 'bg-red-500'
-                      )} />
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-white capitalize">{alert.type}</p>
-                        <p className="text-xs text-slate-500">{alert.location!.lat.toFixed(5)}, {alert.location!.lng.toFixed(5)}</p>
-                      </div>
-                      <Badge className={cn("text-[10px] font-bold border-none",
-                        alert.status === 'pending' ? 'bg-red-500/10 text-red-400' :
-                        alert.status === 'responding' ? 'bg-blue-500/10 text-blue-400' :
-                        'bg-green-500/10 text-green-400'
-                      )}>
-                        {alert.status}
-                      </Badge>
-                    </div>
-                  ))
-                )}
-              </div>
             </div>
           )}
 
