@@ -53,7 +53,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* DashboardHeader only for roles that don't have their own sidebar */}
-      {profile.role !== 'admin' && profile.role !== 'user' && profile.role !== 'fire' && profile.role !== 'police' && profile.role !== 'medical' && <DashboardHeader />}
+      {profile.role !== 'admin' && profile.role !== 'user' && profile.role !== 'fire' && profile.role !== 'police' && profile.role !== 'medical' && profile.role !== 'security' && profile.role !== 'drrm' && profile.role !== 'clinic' && <DashboardHeader />}
       <main className="flex-1">
         {(profile.role === 'user' || profile.role === 'school_user') && <UserDashboard />}
         {profile.role === 'fire' && <FireDashboard />}

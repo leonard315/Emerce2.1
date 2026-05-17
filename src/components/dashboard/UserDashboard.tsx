@@ -1399,7 +1399,7 @@ export function UserDashboard() {
                   <div className={cn(
                     "h-11 w-11 rounded-2xl flex items-center justify-center flex-shrink-0",
                     selectedType === 'fire' ? 'bg-orange-500/20' :
-                    selectedType === 'police' ? 'bg-blue-500/20' :
+                    selectedType === 'crime' ? 'bg-blue-500/20' :
                     selectedType === 'medical' ? 'bg-red-500/20' : 'bg-slate-700/50'
                   )}>
                     {selectedType === 'fire' && <AlertTriangle className="h-5 w-5 text-orange-400" />}
@@ -1530,7 +1530,7 @@ export function UserDashboard() {
                     className={cn(
                       "flex-1 h-12 rounded-xl font-bold text-sm text-white transition-all active:scale-95 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed",
                       selectedType === 'fire' ? 'bg-orange-500 hover:bg-orange-400 shadow-orange-900/40' :
-                      selectedType === 'police' ? 'bg-blue-600 hover:bg-blue-500 shadow-blue-900/40' :
+                      selectedType === 'crime' ? 'bg-blue-600 hover:bg-blue-500 shadow-blue-900/40' :
                       selectedType === 'medical' ? 'bg-red-600 hover:bg-red-500 shadow-red-900/40' :
                       'bg-red-600 hover:bg-red-500 shadow-red-900/40'
                     )}

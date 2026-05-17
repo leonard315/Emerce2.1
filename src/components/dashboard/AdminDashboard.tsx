@@ -491,7 +491,7 @@ export function AdminDashboard() {
                       <CardTitle className="text-sm font-bold text-white">
                         Alerts · Last 7 Days
                       </CardTitle>
-                      <Button variant="ghost" size="sm" className="text-xs text-slate-400 h-7">Go to History</Button>
+                      <Button variant="ghost" size="sm" className="text-xs text-slate-400 h-7" onClick={() => setCurrentView('history')}>Go to History</Button>
                     </CardHeader>
                     <CardContent className="p-4 h-[220px]">
                       <ResponsiveContainer width="100%" height="100%">
@@ -543,7 +543,7 @@ export function AdminDashboard() {
                   <Card className="bg-slate-900/60 border-white/5 rounded-2xl overflow-hidden">
                     <CardHeader className="flex flex-row items-center justify-between py-3 px-5 border-b border-white/5">
                       <CardTitle className="text-sm font-bold text-white">Recent Alerts</CardTitle>
-                      <Button variant="ghost" size="sm" className="text-xs text-blue-400 h-7 px-2">All →</Button>
+                      <Button variant="ghost" size="sm" className="text-xs text-blue-400 h-7 px-2" onClick={() => setCurrentView('alerts')}>All →</Button>
                     </CardHeader>
                     <CardContent className="p-0 max-h-[280px] overflow-y-auto">
                       {alerts.slice(0, 8).map((alert) => (
@@ -584,7 +584,7 @@ export function AdminDashboard() {
                   <Card className="bg-slate-900/60 border-white/5 rounded-2xl overflow-hidden">
                     <CardHeader className="flex flex-row items-center justify-between py-3 px-5 border-b border-white/5">
                       <CardTitle className="text-sm font-bold text-white">Registered Users</CardTitle>
-                      <Button variant="ghost" size="sm" className="text-xs text-blue-400 h-7 px-2">Manage →</Button>
+                      <Button variant="ghost" size="sm" className="text-xs text-blue-400 h-7 px-2" onClick={() => setCurrentView('users')}>Manage →</Button>
                     </CardHeader>
                     <CardContent className="p-0 max-h-[220px] overflow-y-auto">
                       {users.slice(0, 6).map((user) => (

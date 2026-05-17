@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { collection, query, orderBy, doc, writeBatch, serverTimestamp as firestoreTimestamp, getDoc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, writeBatch, serverTimestamp as firestoreTimestamp, getDoc, deleteDoc } from 'firebase/firestore';
 import { ref, push, serverTimestamp as rtdbTimestamp } from 'firebase/database';
 import { useFirestore, useCollection, useDatabase, useMemoFirebase } from '@/firebase';
 import { EmergencyAlert, AlertStatus } from '@/lib/types';
@@ -24,6 +24,7 @@ import { AlertSoundButton } from "./AlertSoundButton";
 import { useAlertSound } from "@/hooks/use-alert-sound";
 import { SectorVectorGrid } from "./SectorVectorGrid";
 import { DashboardHeader } from "./DashboardHeader";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import Link from 'next/link';
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
@@ -592,6 +593,34 @@ export function FireDashboard() {
           </div>
         )}
       </SidebarInset>
+
+      {/* ── False Report Confirmation Dialog ─────────────────────────────── */}
+      <AlertDialog open={falseReportConfirm !== null} onOpenChange={(open) => { if (!open) setFalseReportConfirm(null); }}>
+        <AlertDialogContent className="bg-slate-950 border-white/10 rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Mark as False Report?</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              This will mark <span className="text-white font-bold">{falseReportConfirm?.userName}</span>'s report as a false report and record a violation on their account. At 3 violations, their account will be deactivated.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-slate-800 border-white/10 text-white hover:bg-slate-700">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-500 text-white"
+              onClick={() => {
+                if (falseReportConfirm) {
+                  markFalseReport(falseReportConfirm);
+                  setFalseReportConfirm(null);
+                }
+              }}
+            >
+              Confirm False Report
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SidebarProvider>
   );
 }

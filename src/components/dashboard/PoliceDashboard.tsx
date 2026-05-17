@@ -11,7 +11,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from "@/hooks/use-toast";
 import {
   ShieldCheck, CheckCircle2, Navigation, MapPin, Zap, BrainCircuit,
-  Radio, Clock, User, ChevronRight, AlertTriangle, Trash2
+  Radio, Clock, User, ChevronRight, AlertTriangle, Trash2, Activity
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { analyzeSituation } from '@/ai/flows/analyze-situation-flow';
