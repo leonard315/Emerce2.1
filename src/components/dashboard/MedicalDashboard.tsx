@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { collection, query, orderBy, doc, writeBatch, serverTimestamp as firestoreTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, doc, writeBatch, serverTimestamp as firestoreTimestamp, getDoc, deleteDoc } from 'firebase/firestore';
 import { ref, push, serverTimestamp as rtdbTimestamp } from 'firebase/database';
 import { useFirestore, useCollection, useDatabase, useMemoFirebase } from '@/firebase';
 import { EmergencyAlert, AlertStatus } from '@/lib/types';
@@ -138,7 +138,6 @@ export function MedicalDashboard() {
 
   const markFalseReport = async (alert: EmergencyAlert) => {
     if (!profile || !db) return;
-    const { getDoc, collection: fsCollection } = await import('firebase/firestore');
     const userRef = doc(db, 'users', alert.userId);
     const userSnap = await getDoc(userRef);
     const current = (userSnap.data()?.falseReportCount || 0);
@@ -158,7 +157,7 @@ export function MedicalDashboard() {
     batch.set(userRef, userUpdate, { merge: true });
 
     // Write in-app warning notification to the user
-    const notifRef = doc(fsCollection(db, 'users', alert.userId, 'notifications'));
+    const notifRef = doc(collection(db, 'users', alert.userId, 'notifications'));
     batch.set(notifRef, {
       id: notifRef.id,
       type: shouldDeactivate ? 'deactivated' : 'warning',
@@ -185,7 +184,6 @@ export function MedicalDashboard() {
   const deleteAlert = async (alert: EmergencyAlert) => {
     if (!db) return;
     try {
-      const { deleteDoc } = await import('firebase/firestore');
       await Promise.all([
         deleteDoc(doc(db, 'agency_alerts_medical', alert.id)),
         deleteDoc(doc(db, 'users', alert.userId, 'alerts', alert.id)).catch(() => {}),

@@ -168,7 +168,6 @@ export function FireDashboard() {
 
   const markFalseReport = async (alert: EmergencyAlert) => {
     if (!profile || !db) return;
-    const { getDoc, collection: fsCollection } = await import('firebase/firestore');
     const userRef = doc(db, 'users', alert.userId);
     const userSnap = await getDoc(userRef);
     const current = (userSnap.data()?.falseReportCount || 0);
@@ -188,7 +187,7 @@ export function FireDashboard() {
     batch.set(userRef, userUpdate, { merge: true });
 
     // Write in-app warning notification to the user
-    const notifRef = doc(fsCollection(db, 'users', alert.userId, 'notifications'));
+    const notifRef = doc(collection(db, 'users', alert.userId, 'notifications'));
     batch.set(notifRef, {
       id: notifRef.id,
       type: shouldDeactivate ? 'deactivated' : 'warning',
@@ -215,7 +214,6 @@ export function FireDashboard() {
   const deleteAlert = async (alert: EmergencyAlert) => {
     if (!db) return;
     try {
-      const { deleteDoc } = await import('firebase/firestore');
       await Promise.all([
         deleteDoc(doc(db, 'agency_alerts_fire', alert.id)),
         deleteDoc(doc(db, 'users', alert.userId, 'alerts', alert.id)).catch(() => {}),

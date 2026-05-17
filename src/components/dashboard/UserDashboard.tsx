@@ -106,6 +106,11 @@ export function UserDashboard() {
   }, []);
 
   const startRecording = async () => {
+    // Check if getUserMedia is available (requires HTTPS or localhost)
+    if (!navigator.mediaDevices?.getUserMedia) {
+      toast({ variant: 'destructive', title: 'Voice recording not supported', description: 'Voice notes require a secure connection (HTTPS).' });
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       // Detect supported MIME type — Safari needs audio/mp4, Chrome/Firefox use audio/webm
@@ -129,8 +134,18 @@ export function UserDashboard() {
       mr.start();
       mediaRecorderRef.current = mr;
       setIsRecording(true);
-    } catch {
-      toast({ variant: 'destructive', title: 'Microphone access denied', description: 'Allow microphone to record voice note.' });
+    } catch (err: any) {
+      const isDenied = err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError';
+      const isNotFound = err?.name === 'NotFoundError' || err?.name === 'DevicesNotFoundError';
+      toast({
+        variant: 'destructive',
+        title: isDenied ? 'Microphone Permission Denied' : isNotFound ? 'No Microphone Found' : 'Voice Recording Failed',
+        description: isDenied
+          ? 'Please allow microphone access in your browser settings, then try again.'
+          : isNotFound
+          ? 'No microphone detected on this device.'
+          : 'Could not start recording. Please try again.',
+      });
     }
   };
 
