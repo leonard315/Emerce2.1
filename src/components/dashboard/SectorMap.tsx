@@ -3,11 +3,18 @@
 import 'leaflet/dist/leaflet.css';
 import { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
 import { EmergencyAlert } from '@/lib/types';
 
+// Fix Leaflet default icon broken in Next.js
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
+
 function createColoredIcon(color: string) {
-  if (typeof window === 'undefined') return undefined;
-  const L = require('leaflet');
   return L.divIcon({
     className: '',
     html: `<div style="
@@ -24,7 +31,6 @@ function createColoredIcon(color: string) {
   });
 }
 
-// Recenters only when a new alert arrives, not on every render
 function MapUpdater({ alerts }: { alerts: EmergencyAlert[] }) {
   const map = useMap();
   const prevCountRef = useRef(0);
@@ -41,7 +47,7 @@ function MapUpdater({ alerts }: { alerts: EmergencyAlert[] }) {
         map.setView([withLocation[0].location!.lat, withLocation[0].location!.lng], 14, { animate: true });
       } else {
         const bounds = withLocation.map(a => [a.location!.lat, a.location!.lng] as [number, number]);
-        map.fitBounds(bounds, { padding: [30, 30], animate: true });
+        map.fitBounds(bounds as any, { padding: [30, 30], animate: true });
       }
     }
     prevCountRef.current = withLocation.length;

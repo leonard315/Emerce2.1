@@ -3,6 +3,15 @@
 import 'leaflet/dist/leaflet.css';
 import { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+
+// Fix Leaflet default icon broken in Next.js
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
 
 interface Alert {
   id: string;
@@ -22,8 +31,6 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 function createColoredIcon(color: string) {
-  if (typeof window === 'undefined') return undefined;
-  const L = require('leaflet');
   return L.divIcon({
     className: '',
     html: `<div style="
@@ -40,7 +47,6 @@ function createColoredIcon(color: string) {
   });
 }
 
-// Only recenters when a NEW alert arrives (count increases), not on every render
 function MapUpdater({ alerts }: { alerts: Alert[] }) {
   const map = useMap();
   const prevCountRef = useRef(0);
@@ -48,18 +54,16 @@ function MapUpdater({ alerts }: { alerts: Alert[] }) {
   useEffect(() => {
     const withLocation = alerts.filter(a => a.location);
     if (withLocation.length > prevCountRef.current) {
-      // New alert — fly to it
       const newest = withLocation[withLocation.length - 1];
       if (newest?.location) {
         map.flyTo([newest.location.lat, newest.location.lng], 14, { animate: true, duration: 1 });
       }
     } else if (withLocation.length > 0 && prevCountRef.current === 0) {
-      // First load with alerts — fit all markers
       const bounds = withLocation.map(a => [a.location!.lat, a.location!.lng] as [number, number]);
       if (bounds.length === 1) {
         map.setView(bounds[0], 14, { animate: true });
       } else {
-        map.fitBounds(bounds, { padding: [40, 40], animate: true });
+        map.fitBounds(bounds as any, { padding: [40, 40], animate: true });
       }
     }
     prevCountRef.current = withLocation.length;
