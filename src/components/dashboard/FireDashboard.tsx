@@ -429,14 +429,30 @@ export function FireDashboard() {
                         {/* ── Photo Evidence ── */}
                         {photo && (
                           <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-800/50 border border-white/10">
-                            <a href={photo} target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
+                            <button onClick={() => {
+                              if (photo.startsWith('data:')) {
+                                const arr = photo.split(','); const mime = arr[0].match(/:(.*?);/)![1];
+                                const bstr = atob(arr[1]); let n = bstr.length; const u8 = new Uint8Array(n);
+                                while (n--) u8[n] = bstr.charCodeAt(n);
+                                const url = URL.createObjectURL(new Blob([u8], { type: mime }));
+                                window.open(url, '_blank');
+                              } else { window.open(photo, '_blank'); }
+                            }} className="flex-shrink-0">
                               <img src={photo} alt="Evidence" className="h-12 w-12 rounded-lg object-cover border border-white/10 hover:opacity-80 transition-opacity cursor-zoom-in" />
-                            </a>
+                            </button>
                             <div className="flex-1 min-w-0">
                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Photo Evidence</p>
                               <p className="text-xs text-slate-500 mt-0.5 truncate">Tap thumbnail to view full size</p>
                             </div>
-                            <a href={photo} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-orange-400 hover:text-orange-300 shrink-0 transition-colors">View →</a>
+                            <button onClick={() => {
+                              if (photo.startsWith('data:')) {
+                                const arr = photo.split(','); const mime = arr[0].match(/:(.*?);/)![1];
+                                const bstr = atob(arr[1]); let n = bstr.length; const u8 = new Uint8Array(n);
+                                while (n--) u8[n] = bstr.charCodeAt(n);
+                                const url = URL.createObjectURL(new Blob([u8], { type: mime }));
+                                window.open(url, '_blank');
+                              } else { window.open(photo, '_blank'); }
+                            }} className="text-[10px] font-bold text-orange-400 hover:text-orange-300 shrink-0 transition-colors">View →</button>
                           </div>
                         )}
 
