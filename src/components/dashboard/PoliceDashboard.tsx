@@ -130,6 +130,21 @@ export function PoliceDashboard() {
     batch.set(doc(db, 'agency_alerts_police', alert.id), data, { merge: true });
     batch.set(doc(db, 'users', alert.userId, 'alerts', alert.id), data, { merge: true });
     batch.set(doc(db, 'all_alerts', alert.id), data, { merge: true });
+
+    // Notify reporter of status change
+    const { collection: fsCol } = await import('firebase/firestore');
+    const notifRef = doc(fsCol(db, 'users', alert.userId, 'notifications'));
+    batch.set(notifRef, {
+      id: notifRef.id,
+      type: 'status_update',
+      title: status === 'responding' ? 'Responder On The Way' : 'Incident Resolved',
+      message: status === 'responding'
+        ? `${profile.name} from Security is responding to your report.`
+        : `Your incident report has been resolved by ${profile.name}.`,
+      timestamp: firestoreTimestamp(),
+      read: false,
+    });
+
     await batch.commit();
     toast({ title: `Alert marked as ${status}` });
     if (rtdb) {

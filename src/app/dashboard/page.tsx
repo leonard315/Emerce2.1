@@ -52,14 +52,18 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* DashboardHeader only for admin — agency/user dashboards render it inside their SidebarInset */}
+      {/* DashboardHeader only for roles that don't have their own sidebar */}
       {profile.role !== 'admin' && profile.role !== 'user' && profile.role !== 'fire' && profile.role !== 'police' && profile.role !== 'medical' && <DashboardHeader />}
-      <main className={profile.role !== 'admin' ? "flex-1" : "flex-1"}>
-        {profile.role === 'user' && <UserDashboard />}
+      <main className="flex-1">
+        {(profile.role === 'user' || profile.role === 'school_user') && <UserDashboard />}
         {profile.role === 'fire' && <FireDashboard />}
         {profile.role === 'police' && <PoliceDashboard />}
         {profile.role === 'medical' && <MedicalDashboard />}
         {profile.role === 'admin' && <AdminDashboard />}
+        {/* School roles map to agency dashboards */}
+        {profile.role === 'security' && <PoliceDashboard />}
+        {profile.role === 'drrm' && <FireDashboard />}
+        {profile.role === 'clinic' && <MedicalDashboard />}
       </main>
     </div>
   );

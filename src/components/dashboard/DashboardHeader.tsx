@@ -27,6 +27,7 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ sidebarTrigger }: DashboardHeaderProps = {}) {
   const auth = useFirebaseHooks();
+  const router = useRouter();
   const rtdb = useDatabase();
   const { profile, user } = useAuth();
   const [activeResponders, setActiveResponders] = useState(0);

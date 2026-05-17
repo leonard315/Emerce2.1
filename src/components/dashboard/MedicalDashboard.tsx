@@ -8,7 +8,7 @@ import { EmergencyAlert, AlertStatus } from '@/lib/types';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from "@/hooks/use-toast";
-import { HeartPulse, CheckCircle2, Navigation, MapPin, Zap, BrainCircuit, Radio, Clock, User, ChevronRight, AlertTriangle, Trash2 } from 'lucide-react';
+import { HeartPulse, CheckCircle2, Navigation, MapPin, Zap, BrainCircuit, Radio, Clock, User, ChevronRight, AlertTriangle, Trash2, Activity } from 'lucide-react';
 import { format } from 'date-fns';
 import { analyzeSituation } from '@/ai/flows/analyze-situation-flow';
 import { cn } from '@/lib/utils';
@@ -112,6 +112,21 @@ export function MedicalDashboard() {
     batch.set(doc(db, 'agency_alerts_medical', alert.id), data, { merge: true });
     batch.set(doc(db, 'users', alert.userId, 'alerts', alert.id), data, { merge: true });
     batch.set(doc(db, 'all_alerts', alert.id), data, { merge: true });
+
+    // Notify reporter of status change
+    const { collection: fsCol } = await import('firebase/firestore');
+    const notifRef = doc(fsCol(db, 'users', alert.userId, 'notifications'));
+    batch.set(notifRef, {
+      id: notifRef.id,
+      type: 'status_update',
+      title: status === 'responding' ? 'Responder On The Way' : 'Incident Resolved',
+      message: status === 'responding'
+        ? `${profile.name} from Clinic is responding to your report.`
+        : `Your incident report has been resolved by ${profile.name}.`,
+      timestamp: firestoreTimestamp(),
+      read: false,
+    });
+
     await batch.commit();
     toast({ title: `Alert marked as ${status}` });
     if (rtdb) push(ref(rtdb, 'live-logs'), { action: `Medical: ${profile.name} → ${status}`, userName: profile.name, timestamp: rtdbTimestamp() });
