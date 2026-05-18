@@ -17,15 +17,24 @@ service cloud.firestore {
     }
 
     function isFireAgency() {
-      return isSignedIn() && exists(/databases/$(database)/documents/roles_fire_agency/$(request.auth.uid));
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/roles_fire_agency/$(request.auth.uid)) ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'drrm'
+      );
     }
 
     function isPoliceAgency() {
-      return isSignedIn() && exists(/databases/$(database)/documents/roles_police_agency/$(request.auth.uid));
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/roles_police_agency/$(request.auth.uid)) ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'security'
+      );
     }
 
     function isMedicalAgency() {
-      return isSignedIn() && exists(/databases/$(database)/documents/roles_medical_agency/$(request.auth.uid));
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/roles_medical_agency/$(request.auth.uid)) ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'clinic'
+      );
     }
 
     function isAnyAgency() {

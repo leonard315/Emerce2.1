@@ -242,16 +242,16 @@ export function AdminDashboard() {
       batch.set(doc(db, 'users', selectedUser.uid), { role: editRole }, { merge: true });
       // Remove from old role collection
       const oldRoleCol = selectedUser.role === 'admin' ? 'roles_admin'
-        : selectedUser.role === 'fire' ? 'roles_fire_agency'
-        : selectedUser.role === 'police' ? 'roles_police_agency'
-        : selectedUser.role === 'medical' ? 'roles_medical_agency'
+        : (selectedUser.role === 'fire' || selectedUser.role === 'drrm') ? 'roles_fire_agency'
+        : (selectedUser.role === 'police' || selectedUser.role === 'security') ? 'roles_police_agency'
+        : (selectedUser.role === 'medical' || selectedUser.role === 'clinic') ? 'roles_medical_agency'
         : 'roles_general_users';
       batch.delete(doc(db, oldRoleCol, selectedUser.uid));
       // Add to new role collection
       const newRoleCol = editRole === 'admin' ? 'roles_admin'
-        : editRole === 'fire' ? 'roles_fire_agency'
-        : editRole === 'police' ? 'roles_police_agency'
-        : editRole === 'medical' ? 'roles_medical_agency'
+        : (editRole === 'fire' || editRole === 'drrm') ? 'roles_fire_agency'
+        : (editRole === 'police' || editRole === 'security') ? 'roles_police_agency'
+        : (editRole === 'medical' || editRole === 'clinic') ? 'roles_medical_agency'
         : 'roles_general_users';
       batch.set(doc(db, newRoleCol, selectedUser.uid), { active: true });
       await batch.commit();
