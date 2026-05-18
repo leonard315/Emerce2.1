@@ -132,9 +132,9 @@ function AuthContent() {
     });
     const roleCollection =
       userRole === 'admin' ? 'roles_admin' :
-      userRole === 'fire' ? 'roles_fire_agency' :
-      userRole === 'police' ? 'roles_police_agency' :
-      userRole === 'medical' ? 'roles_medical_agency' : 'roles_general_users';
+      (userRole === 'fire' || userRole === 'drrm') ? 'roles_fire_agency' :
+      (userRole === 'police' || userRole === 'security') ? 'roles_police_agency' :
+      (userRole === 'medical' || userRole === 'clinic') ? 'roles_medical_agency' : 'roles_general_users';
     batch.set(doc(db, roleCollection, uid), { active: true });
     await batch.commit();
   };
