@@ -141,30 +141,24 @@ export function MedicalDashboard() {
   const markFalseReport = async (alert: EmergencyAlert) => {
     if (!profile || !db) return;
     try {
-      const alertData = { status: 'false_report' as AlertStatus, falseReportBy: profile.name, falseReportTime: firestoreTimestamp() };
-
-      // Step 1: Update alert status in all three collections — this is the critical write.
-      // Do it first so if it fails we get a visible error, not a silent revert.
-      await Promise.all([
-        updateDoc(doc(db, 'agency_alerts_medical', alert.id), alertData),
-        updateDoc(doc(db, 'all_alerts', alert.id), alertData).catch(() => {}),
-        updateDoc(doc(db, 'users', alert.userId, 'alerts', alert.id), alertData).catch(() => {}),
-      ]);
-
-      // Step 2: Penalty writes — increment count, maybe deactivate, send notification.
       const userRef = doc(db, 'users', alert.userId);
       const userSnap = await getDoc(userRef);
       const current = (userSnap.data()?.falseReportCount || 0);
       const next = current + 1;
       const shouldDeactivate = next >= 3;
 
-      const penaltyBatch = writeBatch(db);
+      const batch = writeBatch(db);
+      const alertData = { status: 'false_report' as AlertStatus, falseReportBy: profile.name, falseReportTime: firestoreTimestamp() };
+      batch.set(doc(db, 'agency_alerts_medical', alert.id), alertData, { merge: true });
+      batch.set(doc(db, 'users', alert.userId, 'alerts', alert.id), alertData, { merge: true });
+      batch.set(doc(db, 'all_alerts', alert.id), alertData, { merge: true });
+
       const userUpdate: Record<string, any> = { falseReportCount: increment(1) };
       if (shouldDeactivate) userUpdate.isDeactivated = true;
-      penaltyBatch.set(userRef, userUpdate, { merge: true });
+      batch.set(userRef, userUpdate, { merge: true });
 
       const notifRef = doc(collection(db, 'users', alert.userId, 'notifications'));
-      penaltyBatch.set(notifRef, {
+      batch.set(notifRef, {
         id: notifRef.id,
         type: shouldDeactivate ? 'deactivated' : 'warning',
         title: shouldDeactivate ? 'Account Deactivated' : `False Report Warning (${next}/3)`,
@@ -174,8 +168,8 @@ export function MedicalDashboard() {
         timestamp: firestoreTimestamp(),
         read: false,
       });
-      await penaltyBatch.commit();
 
+      await batch.commit();
       toast({
         variant: 'destructive',
         title: 'Marked as False Report',
