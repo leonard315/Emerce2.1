@@ -50,7 +50,7 @@ service cloud.firestore {
       allow get: if isSignedIn();
       allow list: if isAdmin();
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin();
+      allow update: if isOwner(userId) || isAdmin() || isAnyAgency() || isSchoolAgency();
       allow delete: if isAdmin();
     }
 
@@ -91,7 +91,7 @@ service cloud.firestore {
     match /users/{userId}/alerts/{alertId} {
       allow get, list: if isOwner(userId) || isAdmin() || isAnyAgency() || isSchoolAgency();
       allow create: if isOwner(userId) || isAnyAgency() || isSchoolAgency();
-      allow update: if isOwner(userId) || isAdmin() || isAnyAgency() || isSchoolAgency();
+      allow update: if isSignedIn();
       allow delete: if isOwner(userId) || isAdmin();
     }
 
@@ -99,7 +99,7 @@ service cloud.firestore {
 
     match /users/{userId}/notifications/{notifId} {
       allow get, list: if isOwner(userId) || isAdmin();
-      allow create: if isAdmin() || isAnyAgency() || isSchoolAgency();
+      allow create: if isSignedIn();
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if isOwner(userId) || isAdmin();
     }
@@ -108,22 +108,22 @@ service cloud.firestore {
 
     match /agency_alerts_fire/{alertId} {
       allow create: if isSignedIn();
-      allow read, list: if isAdmin() || isFireAgency() || isSchoolAgency();
-      allow update: if isAdmin() || isFireAgency() || isSchoolAgency();
+      allow read, list: if isSignedIn();
+      allow update: if isSignedIn();
       allow delete: if isAdmin() || isFireAgency() || isSchoolAgency();
     }
 
     match /agency_alerts_police/{alertId} {
       allow create: if isSignedIn();
-      allow read, list: if isAdmin() || isPoliceAgency() || isSchoolAgency();
-      allow update: if isAdmin() || isPoliceAgency() || isSchoolAgency();
+      allow read, list: if isSignedIn();
+      allow update: if isSignedIn();
       allow delete: if isAdmin() || isPoliceAgency() || isSchoolAgency();
     }
 
     match /agency_alerts_medical/{alertId} {
       allow create: if isSignedIn();
-      allow read, list: if isAdmin() || isMedicalAgency() || isSchoolAgency();
-      allow update: if isAdmin() || isMedicalAgency() || isSchoolAgency();
+      allow read, list: if isSignedIn();
+      allow update: if isSignedIn();
       allow delete: if isAdmin() || isMedicalAgency() || isSchoolAgency();
     }
 
@@ -132,7 +132,7 @@ service cloud.firestore {
     match /all_alerts/{alertId} {
       allow create: if isSignedIn();
       allow get, list: if isSignedIn();
-      allow update: if isAdmin() || isAnyAgency() || isSchoolAgency();
+      allow update: if isSignedIn();
       allow delete: if isAdmin() || isAnyAgency() || isSchoolAgency();
     }
 
