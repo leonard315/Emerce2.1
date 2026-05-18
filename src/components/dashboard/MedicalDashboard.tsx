@@ -107,30 +107,33 @@ export function MedicalDashboard() {
 
   const updateStatus = async (alert: EmergencyAlert, status: 'responding' | 'resolved') => {
     if (!profile || !db) return;
-    const batch = writeBatch(db);
-    const data: Record<string, unknown> = { status };
-    if (status === 'responding') { data.responderId = profile.uid; data.responderName = profile.name; data.responseStartTime = firestoreTimestamp(); }
-    else { data.resolvedTime = firestoreTimestamp(); }
-    batch.set(doc(db, 'agency_alerts_medical', alert.id), data, { merge: true });
-    batch.set(doc(db, 'users', alert.userId, 'alerts', alert.id), data, { merge: true });
-    batch.set(doc(db, 'all_alerts', alert.id), data, { merge: true });
+    try {
+      const batch = writeBatch(db);
+      const data: Record<string, unknown> = { status };
+      if (status === 'responding') { data.responderId = profile.uid; data.responderName = profile.name; data.responseStartTime = firestoreTimestamp(); }
+      else { data.resolvedTime = firestoreTimestamp(); }
+      batch.set(doc(db, 'agency_alerts_medical', alert.id), data, { merge: true });
+      batch.set(doc(db, 'users', alert.userId, 'alerts', alert.id), data, { merge: true });
+      batch.set(doc(db, 'all_alerts', alert.id), data, { merge: true });
 
-    // Notify reporter of status change
-    const notifRef = doc(collection(db, 'users', alert.userId, 'notifications'));
-    batch.set(notifRef, {
-      id: notifRef.id,
-      type: 'status_update',
-      title: status === 'responding' ? 'Responder On The Way' : 'Incident Resolved',
-      message: status === 'responding'
-        ? `${profile.name} from Clinic is responding to your report.`
-        : `Your incident report has been resolved by ${profile.name}.`,
-      timestamp: firestoreTimestamp(),
-      read: false,
-    });
+      const notifRef = doc(collection(db, 'users', alert.userId, 'notifications'));
+      batch.set(notifRef, {
+        id: notifRef.id,
+        type: 'status_update',
+        title: status === 'responding' ? 'Responder On The Way' : 'Incident Resolved',
+        message: status === 'responding'
+          ? `${profile.name} from Clinic is responding to your report.`
+          : `Your incident report has been resolved by ${profile.name}.`,
+        timestamp: firestoreTimestamp(),
+        read: false,
+      });
 
-    await batch.commit();
-    toast({ title: `Alert marked as ${status}` });
-    if (rtdb) push(ref(rtdb, 'live-logs'), { action: `Medical: ${profile.name} → ${status}`, userName: profile.name, timestamp: rtdbTimestamp() });
+      await batch.commit();
+      toast({ title: `Alert marked as ${status}` });
+      if (rtdb) push(ref(rtdb, 'live-logs'), { action: `Medical: ${profile.name} → ${status}`, userName: profile.name, timestamp: rtdbTimestamp() });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Failed to update status', description: e.message });
+    }
   };
 
   const pendingAlerts = alerts.filter(a => a.status === 'pending');

@@ -172,7 +172,7 @@ service cloud.firestore {
 
     match /alert_media/{alertId} {
       allow create: if isSignedIn();
-      allow read, get, list: if isAdmin() || isAnyAgency() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow read, get, list: if isAdmin() || isAnyAgency() || isSchoolAgency() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow delete: if isAdmin();
     }
 
