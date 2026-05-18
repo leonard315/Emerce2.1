@@ -165,24 +165,30 @@ export function PoliceDashboard() {
   const markFalseReport = async (alert: EmergencyAlert) => {
     if (!profile || !db) return;
     try {
+      const alertData = { status: 'false_report' as AlertStatus, falseReportBy: profile.name, falseReportTime: firestoreTimestamp() };
+
+      // Commit alert status FIRST — before any async reads — so the listener
+      // immediately gets false_report and the UI stops reverting to responding.
+      const statusBatch = writeBatch(db);
+      statusBatch.set(doc(db, 'agency_alerts_police', alert.id), alertData, { merge: true });
+      statusBatch.set(doc(db, 'users', alert.userId, 'alerts', alert.id), alertData, { merge: true });
+      statusBatch.set(doc(db, 'all_alerts', alert.id), alertData, { merge: true });
+      await statusBatch.commit();
+
+      // Now do the user penalty (getDoc is safe here — alert is already false_report)
       const userRef = doc(db, 'users', alert.userId);
       const userSnap = await getDoc(userRef);
-      const current = (userSnap.data()?.falseReportCount || 0);
+      const current = userSnap.data()?.falseReportCount || 0;
       const next = current + 1;
       const shouldDeactivate = next >= 3;
 
-      const batch = writeBatch(db);
-      const alertData = { status: 'false_report' as AlertStatus, falseReportBy: profile.name, falseReportTime: firestoreTimestamp() };
-      batch.set(doc(db, 'agency_alerts_police', alert.id), alertData, { merge: true });
-      batch.set(doc(db, 'users', alert.userId, 'alerts', alert.id), alertData, { merge: true });
-      batch.set(doc(db, 'all_alerts', alert.id), alertData, { merge: true });
-
+      const penaltyBatch = writeBatch(db);
       const userUpdate: Record<string, any> = { falseReportCount: increment(1) };
       if (shouldDeactivate) userUpdate.isDeactivated = true;
-      batch.set(userRef, userUpdate, { merge: true });
+      penaltyBatch.set(userRef, userUpdate, { merge: true });
 
       const notifRef = doc(collection(db, 'users', alert.userId, 'notifications'));
-      batch.set(notifRef, {
+      penaltyBatch.set(notifRef, {
         id: notifRef.id,
         type: shouldDeactivate ? 'deactivated' : 'warning',
         title: shouldDeactivate ? 'Account Deactivated' : `False Report Warning (${next}/3)`,
@@ -192,8 +198,8 @@ export function PoliceDashboard() {
         timestamp: firestoreTimestamp(),
         read: false,
       });
+      await penaltyBatch.commit();
 
-      await batch.commit();
       toast({
         variant: 'destructive',
         title: 'Marked as False Report',
