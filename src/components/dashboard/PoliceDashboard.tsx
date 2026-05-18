@@ -24,6 +24,7 @@ import { AlertSoundButton } from "./AlertSoundButton";
 import { useAlertSound } from "@/hooks/use-alert-sound";
 import { SectorVectorGrid } from "./SectorVectorGrid";
 import { DashboardHeader } from "./DashboardHeader";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import Link from 'next/link';
 
 function StatusBadge({ status }: { status: string }) {
@@ -54,6 +55,7 @@ export function PoliceDashboard() {
   const { toast } = useToast();
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState("dashboard");
+  const [falseReportConfirm, setFalseReportConfirm] = useState<EmergencyAlert | null>(null);
 
   const alertsQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -389,14 +391,23 @@ export function PoliceDashboard() {
                           </div>
                         )}
                         {/* Responder */}
-                        {alert.responderName && (
+                        {alert.responderName && !isFalse && (
                           <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-purple-500/10 border border-purple-500/20">
                             <User className="h-3.5 w-3.5 text-purple-400 shrink-0" />
                             <span className="text-xs text-purple-300 font-bold truncate">Responding: {alert.responderName}</span>
                           </div>
                         )}
+                        {/* False Report label */}
+                        {isFalse && (
+                          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-900/20 border border-red-700/30">
+                            <AlertTriangle className="h-3.5 w-3.5 text-red-400 shrink-0" />
+                            <span className="text-xs text-red-300 font-bold truncate">
+                              Marked as False Report{(alert as any).falseReportBy ? ` by ${(alert as any).falseReportBy}` : ''}
+                            </span>
+                          </div>
+                        )}
                         {/* AI */}
-                        {alert.aiAnalysis ? (
+                        {!isFalse && (alert.aiAnalysis ? (
                           <div className="p-3 rounded-xl bg-slate-900/60 border border-blue-500/10">
                             <div className="flex items-center gap-2 mb-2"><BrainCircuit className="h-3.5 w-3.5 text-blue-400 shrink-0" /><span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">AI Tactical Analysis</span></div>
                             <p className="text-xs text-slate-300 leading-relaxed">{alert.aiAnalysis}</p>
@@ -406,12 +417,12 @@ export function PoliceDashboard() {
                             {analyzingId === alert.id ? <Zap className="h-4 w-4 animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
                             {analyzingId === alert.id ? 'Analyzing...' : 'Run AI Analysis'}
                           </Button>
-                        )}
+                        ))}
                         {/* Actions */}
                         <div className="flex flex-wrap gap-2 pt-1">
                           {isPending && <Button onClick={() => updateStatus(alert, 'responding')} className="flex-1 min-w-[120px] bg-blue-600 hover:bg-blue-500 text-white font-bold gap-2 h-10"><Navigation className="h-4 w-4" /> Respond</Button>}
                           {isResponding && <Button onClick={() => updateStatus(alert, 'resolved')} className="flex-1 min-w-[120px] bg-green-600 hover:bg-green-500 text-white font-bold gap-2 h-10"><CheckCircle2 className="h-4 w-4" /> Mark Resolved</Button>}
-                          {!isResolved && !isFalse && <Button variant="outline" size="sm" onClick={() => markFalseReport(alert)} className="h-10 border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 gap-1.5 font-bold"><AlertTriangle className="h-3.5 w-3.5" /> False Report</Button>}
+                          {!isResolved && !isFalse && <Button variant="outline" size="sm" onClick={() => setFalseReportConfirm(alert)} className="h-10 border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 gap-1.5 font-bold"><AlertTriangle className="h-3.5 w-3.5" /> False Report</Button>}
                           {(isResolved || isFalse) && <Button variant="outline" size="sm" onClick={() => deleteAlert(alert)} className="h-10 border-white/10 text-slate-500 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 gap-1.5"><Trash2 className="h-3.5 w-3.5" /> Delete</Button>}
                           {alert.location && (
                             <Button variant="outline" size="sm" className="h-10 border-white/10 text-slate-400 hover:text-white hover:bg-white/5 gap-1.5"
@@ -482,6 +493,34 @@ export function PoliceDashboard() {
           </div>
         )}
       </SidebarInset>
+
+      {/* ── False Report Confirmation Dialog ─────────────────────────────── */}
+      <AlertDialog open={falseReportConfirm !== null} onOpenChange={(open) => { if (!open) setFalseReportConfirm(null); }}>
+        <AlertDialogContent className="bg-slate-950 border-white/10 rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Mark as False Report?</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              This will mark <span className="text-white font-bold">{falseReportConfirm?.userName}</span>'s report as a false report and record a violation on their account. At 3 violations, their account will be deactivated.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-slate-800 border-white/10 text-white hover:bg-slate-700">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-500 text-white"
+              onClick={() => {
+                if (falseReportConfirm) {
+                  markFalseReport(falseReportConfirm);
+                  setFalseReportConfirm(null);
+                }
+              }}
+            >
+              Confirm False Report
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SidebarProvider>
   );
 }
