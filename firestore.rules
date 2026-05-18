@@ -18,30 +18,30 @@ service cloud.firestore {
 
     function isFireAgency() {
       return isSignedIn() && (
-        exists(/databases/$(database)/documents/roles_fire_agency/$(request.auth.uid)) ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'drrm' ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'fire'
+        exists(/databases/$(database)/documents/roles_fire_agency/$(request.auth.uid))
       );
     }
 
     function isPoliceAgency() {
       return isSignedIn() && (
-        exists(/databases/$(database)/documents/roles_police_agency/$(request.auth.uid)) ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'security' ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'police'
+        exists(/databases/$(database)/documents/roles_police_agency/$(request.auth.uid))
       );
     }
 
     function isMedicalAgency() {
       return isSignedIn() && (
-        exists(/databases/$(database)/documents/roles_medical_agency/$(request.auth.uid)) ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'clinic' ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'medical'
+        exists(/databases/$(database)/documents/roles_medical_agency/$(request.auth.uid))
       );
     }
 
     function isAnyAgency() {
       return isFireAgency() || isPoliceAgency() || isMedicalAgency();
+    }
+
+    // School roles: security=police, drrm=fire, clinic=medical
+    // These are stored in roles_general_users but need agency write access
+    function isSchoolAgency() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_general_users/$(request.auth.uid));
     }
 
     // ── User profiles ───────────────────────────────────────────────────────
@@ -89,9 +89,9 @@ service cloud.firestore {
     // ── User alerts (subcollection) ─────────────────────────────────────────
 
     match /users/{userId}/alerts/{alertId} {
-      allow get, list: if isOwner(userId) || isAdmin() || isAnyAgency();
-      allow create: if isOwner(userId) || isAnyAgency();
-      allow update: if isOwner(userId) || isAdmin() || isAnyAgency();
+      allow get, list: if isOwner(userId) || isAdmin() || isAnyAgency() || isSchoolAgency();
+      allow create: if isOwner(userId) || isAnyAgency() || isSchoolAgency();
+      allow update: if isOwner(userId) || isAdmin() || isAnyAgency() || isSchoolAgency();
       allow delete: if isOwner(userId) || isAdmin();
     }
 
@@ -99,7 +99,7 @@ service cloud.firestore {
 
     match /users/{userId}/notifications/{notifId} {
       allow get, list: if isOwner(userId) || isAdmin();
-      allow create: if isAdmin() || isAnyAgency();
+      allow create: if isAdmin() || isAnyAgency() || isSchoolAgency();
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if isOwner(userId) || isAdmin();
     }
@@ -108,23 +108,23 @@ service cloud.firestore {
 
     match /agency_alerts_fire/{alertId} {
       allow create: if isSignedIn();
-      allow read, list: if isAdmin() || isFireAgency();
-      allow update: if isAdmin() || isFireAgency();
-      allow delete: if isAdmin() || isFireAgency();
+      allow read, list: if isAdmin() || isFireAgency() || isSchoolAgency();
+      allow update: if isAdmin() || isFireAgency() || isSchoolAgency();
+      allow delete: if isAdmin() || isFireAgency() || isSchoolAgency();
     }
 
     match /agency_alerts_police/{alertId} {
       allow create: if isSignedIn();
-      allow read, list: if isAdmin() || isPoliceAgency();
-      allow update: if isAdmin() || isPoliceAgency();
-      allow delete: if isAdmin() || isPoliceAgency();
+      allow read, list: if isAdmin() || isPoliceAgency() || isSchoolAgency();
+      allow update: if isAdmin() || isPoliceAgency() || isSchoolAgency();
+      allow delete: if isAdmin() || isPoliceAgency() || isSchoolAgency();
     }
 
     match /agency_alerts_medical/{alertId} {
       allow create: if isSignedIn();
-      allow read, list: if isAdmin() || isMedicalAgency();
-      allow update: if isAdmin() || isMedicalAgency();
-      allow delete: if isAdmin() || isMedicalAgency();
+      allow read, list: if isAdmin() || isMedicalAgency() || isSchoolAgency();
+      allow update: if isAdmin() || isMedicalAgency() || isSchoolAgency();
+      allow delete: if isAdmin() || isMedicalAgency() || isSchoolAgency();
     }
 
     // ── All alerts (admin + agency read, anyone can create) ─────────────────
@@ -132,8 +132,8 @@ service cloud.firestore {
     match /all_alerts/{alertId} {
       allow create: if isSignedIn();
       allow get, list: if isSignedIn();
-      allow update: if isAdmin() || isAnyAgency();
-      allow delete: if isAdmin() || isAnyAgency();
+      allow update: if isAdmin() || isAnyAgency() || isSchoolAgency();
+      allow delete: if isAdmin() || isAnyAgency() || isSchoolAgency();
     }
 
     // ── Feedback / questionnaire ────────────────────────────────────────────
