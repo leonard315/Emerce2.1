@@ -11,7 +11,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from "@/hooks/use-toast";
 import {
   Flame, CheckCircle2, Navigation, MapPin, Zap, BrainCircuit,
-  Radio, Activity, Clock, User, AlertTriangle, ChevronRight, Trash2
+  Radio, Activity, Clock, User, AlertTriangle, ChevronRight, Trash2, Video
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { analyzeSituation } from '@/ai/flows/analyze-situation-flow';
@@ -22,10 +22,12 @@ import { AgencyProfileView } from "./AgencyProfileView";
 import { AgencySettings } from "./AgencySettings";
 import { AlertSoundButton } from "./AlertSoundButton";
 import { useAlertSound } from "@/hooks/use-alert-sound";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { SectorVectorGrid } from "./SectorVectorGrid";
 import { DashboardHeader } from "./DashboardHeader";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import Link from 'next/link';
+import { VideoCall } from "./VideoCall";
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
@@ -57,6 +59,7 @@ export function FireDashboard() {
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState("dashboard");
   const [falseReportConfirm, setFalseReportConfirm] = useState<EmergencyAlert | null>(null);
+  const [videoCallOpen, setVideoCallOpen] = useState(false);
 
   const alertsQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -77,26 +80,32 @@ export function FireDashboard() {
   }, {});
 
   const { soundEnabled, toggleSound, playNewIncident, playSiren, stopSiren, sirenActive } = useAlertSound();
+  const { showNotification, requestPermission } = usePushNotifications();
   const prevCountRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (isLoading) return; // wait for real Firestore snapshot before establishing baseline
+    if (isLoading) return;
     const pending = alerts.filter(a => a.status === 'pending').length;
     if (prevCountRef.current === null) {
-      // First real snapshot — set baseline silently, no sound
       prevCountRef.current = pending;
       return;
     }
     if (pending > prevCountRef.current) {
-      // New pending alert arrived — play sound
       playNewIncident('fire');
       playSiren('fire');
+      // Push notification — works even when tab is in background
+      const newest = alerts.find(a => a.status === 'pending');
+      showNotification('🔥 New DRRM Emergency Alert', {
+        body: newest ? `${newest.userName} reported a fire/disaster emergency${newest.exactAddress ? ` at ${newest.exactAddress}` : ''}` : 'A new fire emergency has been reported.',
+        tag: 'fire-alert',
+        requireInteraction: true,
+        data: { url: '/dashboard' },
+      });
     } else if (pending < prevCountRef.current) {
-      // A pending alert was responded to or marked false — stop siren
       stopSiren();
     }
     prevCountRef.current = pending;
-  }, [alerts, isLoading, playNewIncident, playSiren, stopSiren]);
+  }, [alerts, isLoading, playNewIncident, playSiren, stopSiren, showNotification]);
 
   const performAIAnalysis = async (alert: EmergencyAlert) => {
     if (!db) return;
@@ -280,6 +289,14 @@ export function FireDashboard() {
                 pendingCount={pendingAlerts.length}
                 accentColor="orange"
               />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setVideoCallOpen(true)}
+                className="h-10 px-3 border-orange-500/30 text-orange-400 hover:bg-orange-500/10 gap-2 font-bold"
+              >
+                <Video className="h-4 w-4" /> Video Call
+              </Button>
             </div>
 
             {/* Stats row */}
@@ -645,6 +662,11 @@ export function FireDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── Video Call ───────────────────────────────────────────────────── */}
+      {videoCallOpen && (
+        <VideoCall onClose={() => setVideoCallOpen(false)} />
+      )}
     </SidebarProvider>
   );
 }

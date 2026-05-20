@@ -27,6 +27,7 @@ import { useAuth as useFirebaseAuth } from '@/firebase';
 import { clearLoginTimestamp } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { sendAlertEmailNotification } from '@/lib/email-notifications';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { DashboardHeader } from "./DashboardHeader";
 import { UserSidebar } from "./UserSidebar";
@@ -303,6 +304,16 @@ export function UserDashboard() {
     }
 
     await batch.commit();
+
+    // Send email notification to the school admin Gmail (fire-and-forget)
+    sendAlertEmailNotification({
+      alertType: selectedType,
+      reporterName: profile.name,
+      reporterEmail: profile.email ?? undefined,
+      location: exactAddress || (location ? `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}` : 'Unknown'),
+      description: description ?? undefined,
+      timestamp: new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' }),
+    }).catch(() => {});
 
     // Store media in a separate document to avoid Firestore 1MB limit on the alert doc
     if (photoEvidenceUrl || voiceNote) {

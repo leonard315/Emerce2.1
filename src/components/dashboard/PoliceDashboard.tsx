@@ -11,7 +11,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from "@/hooks/use-toast";
 import {
   ShieldCheck, CheckCircle2, Navigation, MapPin, Zap, BrainCircuit,
-  Radio, Clock, User, ChevronRight, AlertTriangle, Trash2, Activity
+  Radio, Clock, User, ChevronRight, AlertTriangle, Trash2, Activity, Video
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { analyzeSituation } from '@/ai/flows/analyze-situation-flow';
@@ -22,10 +22,12 @@ import { AgencyProfileView } from "./AgencyProfileView";
 import { AgencySettings } from "./AgencySettings";
 import { AlertSoundButton } from "./AlertSoundButton";
 import { useAlertSound } from "@/hooks/use-alert-sound";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { SectorVectorGrid } from "./SectorVectorGrid";
 import { DashboardHeader } from "./DashboardHeader";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import Link from 'next/link';
+import { VideoCall } from "./VideoCall";
 
 function StatusBadge({ status }: { status: string }) {
   return (
@@ -56,6 +58,7 @@ export function PoliceDashboard() {
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState("dashboard");
   const [falseReportConfirm, setFalseReportConfirm] = useState<EmergencyAlert | null>(null);
+  const [videoCallOpen, setVideoCallOpen] = useState(false);
 
   const alertsQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -75,6 +78,7 @@ export function PoliceDashboard() {
   }, {});
 
   const { soundEnabled, toggleSound, playNewIncident, playSiren, stopSiren, sirenActive } = useAlertSound();
+  const { showNotification } = usePushNotifications();
   const prevCountRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -87,11 +91,18 @@ export function PoliceDashboard() {
     if (pending > prevCountRef.current) {
       playNewIncident('police');
       playSiren('police');
+      const newest = alerts.find(a => a.status === 'pending');
+      showNotification('🚔 New Security Emergency Alert', {
+        body: newest ? `${newest.userName} reported a crime/security emergency${newest.exactAddress ? ` at ${newest.exactAddress}` : ''}` : 'A new crime emergency has been reported.',
+        tag: 'police-alert',
+        requireInteraction: true,
+        data: { url: '/dashboard' },
+      });
     } else if (pending < prevCountRef.current) {
       stopSiren();
     }
     prevCountRef.current = pending;
-  }, [alerts, isLoading, playNewIncident, playSiren, stopSiren]);
+  }, [alerts, isLoading, playNewIncident, playSiren, stopSiren, showNotification]);
 
   const performAIAnalysis = async (alert: EmergencyAlert) => {
     if (!db) return;
@@ -271,6 +282,14 @@ export function PoliceDashboard() {
                 pendingCount={pendingAlerts.length}
                 accentColor="blue"
               />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setVideoCallOpen(true)}
+                className="h-10 px-3 border-blue-500/30 text-blue-400 hover:bg-blue-500/10 gap-2 font-bold"
+              >
+                <Video className="h-4 w-4" /> Video Call
+              </Button>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
@@ -529,6 +548,11 @@ export function PoliceDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── Video Call ───────────────────────────────────────────────────── */}
+      {videoCallOpen && (
+        <VideoCall onClose={() => setVideoCallOpen(false)} />
+      )}
     </SidebarProvider>
   );
 }

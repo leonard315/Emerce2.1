@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential, sendEmailVerification } from 'firebase/auth';
-import { doc, setDoc, deleteDoc, collection, getDocs, writeBatch } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, collection, writeBatch } from 'firebase/firestore';
 import { useAuth as useFirebaseAuth } from '@/firebase';
 import { useFirestore } from '@/firebase';
 import { useAuth } from '@/hooks/use-auth';
@@ -263,11 +263,17 @@ export function AdminSettings() {
     if (!db) return;
     setDangerLoading(true);
     try {
-      const snap = await getDocs(collection(db, 'all_alerts'));
-      const batch = writeBatch(db);
-      snap.docs.forEach(d => batch.delete(d.ref));
-      await batch.commit();
-      toast({ title: 'Alert history cleared', description: `${snap.size} alerts deleted.` });
+      const { getDocs } = await import('firebase/firestore');
+      const collections = ['all_alerts', 'agency_alerts_fire', 'agency_alerts_police', 'agency_alerts_medical'];
+      let total = 0;
+      for (const col of collections) {
+        const snap = await getDocs(collection(db, col));
+        const batch = writeBatch(db);
+        snap.docs.forEach(d => batch.delete(d.ref));
+        if (snap.size > 0) await batch.commit();
+        total += snap.size;
+      }
+      toast({ title: 'Alert history cleared', description: `${total} alerts deleted across all collections.` });
       setClearHistoryDialog(false);
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Failed', description: e.message });

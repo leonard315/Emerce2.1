@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { collection, query, orderBy, limit, doc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { useState, useEffect, useMemo } from 'react';
+import { collection, query, orderBy, limit, doc, setDoc, deleteDoc, writeBatch, serverTimestamp as firestoreTimestamp, increment } from 'firebase/firestore';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { EmergencyAlert, UserProfile } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
@@ -215,7 +215,7 @@ export function AdminDashboard() {
   const feedbacks = feedbackData || [];
   const { profile } = useAuth();
 
-  const chartData = useMemoFirebase(() => {
+  const chartData = useMemo(() => {
     return Array.from({ length: 7 }).map((_, i) => {
       const date = subDays(new Date(), 6 - i);
       const count = alerts.filter(a => {
@@ -273,11 +273,10 @@ export function AdminDashboard() {
       const shouldDeactivate = next >= 3;
 
       const batch = writeBatch(db);
-      const userUpdate: Record<string, any> = { falseReportCount: next };
+      const userUpdate: Record<string, any> = { falseReportCount: increment(1) };
       if (shouldDeactivate) userUpdate.isDeactivated = true;
       batch.set(doc(db, 'users', selectedUser.uid), userUpdate, { merge: true });
 
-      // Write in-app warning notification to the user
       const notifRef = doc(collection(db, 'users', selectedUser.uid, 'notifications'));
       batch.set(notifRef, {
         id: notifRef.id,
@@ -288,7 +287,7 @@ export function AdminDashboard() {
         message: shouldDeactivate
           ? 'Your account has been deactivated due to 3 false emergency reports. Please contact the administrator to appeal.'
           : `A violation has been recorded on your account by an administrator. You have ${next} of 3 allowed violations. Your account will be deactivated upon reaching 3 false reports.`,
-        timestamp: new Date(),
+        timestamp: firestoreTimestamp(),
         read: false,
       });
 

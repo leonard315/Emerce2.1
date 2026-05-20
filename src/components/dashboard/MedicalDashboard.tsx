@@ -8,7 +8,7 @@ import { EmergencyAlert, AlertStatus } from '@/lib/types';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from "@/hooks/use-toast";
-import { HeartPulse, CheckCircle2, Navigation, MapPin, Zap, BrainCircuit, Radio, Clock, User, ChevronRight, AlertTriangle, Trash2, Activity } from 'lucide-react';
+import { HeartPulse, CheckCircle2, Navigation, MapPin, Zap, BrainCircuit, Radio, Clock, User, ChevronRight, AlertTriangle, Trash2, Activity, Video } from 'lucide-react';
 import { format } from 'date-fns';
 import { analyzeSituation } from '@/ai/flows/analyze-situation-flow';
 import { cn } from '@/lib/utils';
@@ -18,10 +18,12 @@ import { AgencyProfileView } from "./AgencyProfileView";
 import { AgencySettings } from "./AgencySettings";
 import { AlertSoundButton } from "./AlertSoundButton";
 import { useAlertSound } from "@/hooks/use-alert-sound";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { SectorVectorGrid } from "./SectorVectorGrid";
 import { DashboardHeader } from "./DashboardHeader";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import Link from 'next/link';
+import { VideoCall } from "./VideoCall";
 
 function StatusBadge({ status }: { status: string }) {
   return (
@@ -51,6 +53,7 @@ export function MedicalDashboard() {
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState("dashboard");
   const [falseReportConfirm, setFalseReportConfirm] = useState<EmergencyAlert | null>(null);
+  const [videoCallOpen, setVideoCallOpen] = useState(false);
 
   const alertsQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -70,6 +73,7 @@ export function MedicalDashboard() {
   }, {});
 
   const { soundEnabled, toggleSound, playNewIncident, playSiren, stopSiren, sirenActive } = useAlertSound();
+  const { showNotification } = usePushNotifications();
   const prevCountRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -82,11 +86,18 @@ export function MedicalDashboard() {
     if (pending > prevCountRef.current) {
       playNewIncident('medical');
       playSiren('medical');
+      const newest = alerts.find(a => a.status === 'pending');
+      showNotification('🚑 New Clinic Emergency Alert', {
+        body: newest ? `${newest.userName} reported a medical emergency${newest.exactAddress ? ` at ${newest.exactAddress}` : ''}` : 'A new medical emergency has been reported.',
+        tag: 'medical-alert',
+        requireInteraction: true,
+        data: { url: '/dashboard' },
+      });
     } else if (pending < prevCountRef.current) {
       stopSiren();
     }
     prevCountRef.current = pending;
-  }, [alerts, isLoading, playNewIncident, playSiren, stopSiren]);
+  }, [alerts, isLoading, playNewIncident, playSiren, stopSiren, showNotification]);
 
   const performAIAnalysis = async (alert: EmergencyAlert) => {
     if (!db) return;
@@ -238,6 +249,14 @@ export function MedicalDashboard() {
               </div>
               <AlertSoundButton soundEnabled={soundEnabled} sirenActive={sirenActive} onToggleSound={toggleSound}
                 onPlaySiren={() => playSiren('medical')} onStopSiren={stopSiren} pendingCount={pendingAlerts.length} accentColor="red" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setVideoCallOpen(true)}
+                className="h-10 px-3 border-red-500/30 text-red-400 hover:bg-red-500/10 gap-2 font-bold"
+              >
+                <Video className="h-4 w-4" /> Video Call
+              </Button>
             </div>
 
             {/* Stats */}
@@ -486,6 +505,11 @@ export function MedicalDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── Video Call ───────────────────────────────────────────────────── */}
+      {videoCallOpen && (
+        <VideoCall onClose={() => setVideoCallOpen(false)} />
+      )}
     </SidebarProvider>
   );
 }
