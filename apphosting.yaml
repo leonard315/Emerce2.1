@@ -5,3 +5,28 @@ runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
+
+env:
+  - variable: GMAIL_USER
+    value: alindatoleonard619@gmail.com
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: GMAIL_APP_PASSWORD
+    value: bqjueooazqhblqtp
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: ALERT_RECIPIENT_EMAIL
+    value: alindatoleonard619@gmail.com
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_APP_URL
+    value: https://emerce-ac815.web.app
+    availability:
+      - BUILD
+      - RUNTIME
