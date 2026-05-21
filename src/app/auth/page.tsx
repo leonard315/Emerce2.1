@@ -214,12 +214,23 @@ function AuthContent() {
     if (!resetEmail.trim()) { toast({ variant: 'destructive', title: 'Enter your email' }); return; }
     setResetLoading(true);
     try {
-      await sendPasswordResetEmail(auth, resetEmail.trim());
-      toast({ title: 'Reset email sent', description: `Check your inbox at ${resetEmail}` });
+      await sendPasswordResetEmail(auth, resetEmail.trim(), {
+        url: typeof window !== 'undefined' ? `${window.location.origin}/auth` : 'https://emerce2-1.vercel.app/auth',
+        handleCodeInApp: false,
+      });
+      // Firebase sends reset email even if email doesn't exist (for security)
+      // Always show success to prevent email enumeration
+      toast({ title: '✅ Reset email sent', description: `If ${resetEmail} is registered, you'll receive a reset link shortly. Check your inbox and spam folder.` });
       setForgotOpen(false);
       setResetEmail('');
     } catch (error: any) {
-      const msg = error.code === 'auth/user-not-found' ? 'No account found with that email.' : error.message;
+      const code = error.code || '';
+      const msg =
+        code === 'auth/user-not-found' ? 'No account found with that email.' :
+        code === 'auth/invalid-email' ? 'Please enter a valid email address.' :
+        code === 'auth/missing-email' ? 'Please enter your email address.' :
+        code === 'auth/too-many-requests' ? 'Too many attempts. Please wait a few minutes and try again.' :
+        error.message;
       toast({ variant: 'destructive', title: 'Failed to send reset email', description: msg });
     } finally {
       setResetLoading(false);
