@@ -1393,6 +1393,17 @@ export function UserDashboard() {
                 <AlertDialogTitle>Report Emergency</AlertDialogTitle>
               </AlertDialogHeader>
 
+              {/* Back button row */}
+              <div className="flex items-center px-4 pt-4 pb-0">
+                <button
+                  onClick={() => { setConfirmOpen(false); setSelectedType(null); setPhotoEvidence(null); setVoiceNote(null); if (isRecording) stopRecording(); }}
+                  className="flex items-center gap-1.5 text-slate-400 hover:text-white text-xs font-semibold transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+                  Back
+                </button>
+              </div>
+
               {/* Map preview — only shown when GPS acquired */}
               {gpsStatus === 'acquired' && userLocation && (
                 <div className="h-28 w-full relative overflow-hidden bg-slate-900">
@@ -1501,11 +1512,11 @@ export function UserDashboard() {
                       : "border-dashed border-red-500/40 bg-red-500/5 text-red-400 hover:border-red-400/60 hover:bg-red-500/10"
                   )}>
                     <Camera className="h-4 w-4" />
-                    {photoEvidence ? `✓ ${photoEvidence.name.slice(0, 24)}...` : 'Add Photo Evidence (Required)'}
+                    {photoEvidence ? `✓ ${photoEvidence.name.slice(0, 24)}...` : 'Add Photo Evidence (Optional)'}
                     <input type="file" accept="image/*" className="hidden" onChange={e => setPhotoEvidence(e.target.files?.[0] || null)} />
                   </label>
                   {!photoEvidence && (
-                    <p className="text-[10px] text-red-400 text-center font-semibold">Photo is required to verify your report</p>
+                    <p className="text-[10px] text-slate-500 text-center">Photo helps verify your report (optional)</p>
                   )}
                 </div>
 
@@ -1564,7 +1575,7 @@ export function UserDashboard() {
 
                 {/* Video Call Agency button */}
                 <button
-                  onClick={() => { setVideoCallOpen(true); }}
+                  onClick={() => { setConfirmOpen(false); setVideoCallOpen(true); }}
                   className="w-full h-10 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-white/10 text-slate-300 hover:text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2"
                 >
                   <Video className="h-4 w-4 text-blue-400" />
