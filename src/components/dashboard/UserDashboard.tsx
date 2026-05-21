@@ -319,16 +319,24 @@ export function UserDashboard() {
     }).catch(() => {});
 
     // Send FCM background push to all agency users (fire-and-forget)
-    fetch('/api/send-fcm-notification', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        alertType: selectedType,
-        reporterName: profile.name,
-        location: exactAddress || (location ? `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}` : 'Unknown'),
-        tokens: [], // tokens fetched server-side from fcm_tokens collection
-      }),
-    }).catch(() => {});
+    // Fetch tokens from Firestore first, then send
+    const { getDocs, collection: fsCol } = await import('firebase/firestore');
+    try {
+      const tokensSnap = await getDocs(fsCol(db, 'fcm_tokens'));
+      const tokens = tokensSnap.docs.map(d => d.data().token).filter(Boolean);
+      if (tokens.length > 0) {
+        fetch('/api/send-fcm-notification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            alertType: selectedType,
+            reporterName: profile.name,
+            location: exactAddress || (location ? `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}` : 'Unknown'),
+            tokens,
+          }),
+        }).catch(() => {});
+      }
+    } catch { /* silent */ }
 
     // Store media in a separate document to avoid Firestore 1MB limit on the alert doc
     if (photoEvidenceUrl || voiceNote) {

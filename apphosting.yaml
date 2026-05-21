@@ -32,13 +32,19 @@ env:
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FCM_VAPID_KEY
-    value: YOUR_VAPID_KEY_HERE
+    value: BMoxTo9-D116Mf6Wurn1n-IegMviE56DLQV5WyfIU8UbttGp4ZfjKEgKyEk2AFiKLCSZp4pvnvG_b0IAMvGeMpl
     availability:
       - BUILD
       - RUNTIME
 
   - variable: FCM_SERVER_KEY
     value: YOUR_SERVER_KEY_HERE
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: GOOGLE_SERVICE_ACCOUNT_JSON
+    value: YOUR_SERVICE_ACCOUNT_JSON_HERE
     availability:
       - BUILD
       - RUNTIME
