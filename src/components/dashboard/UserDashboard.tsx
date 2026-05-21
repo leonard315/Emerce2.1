@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Flame, Shield, Activity, AlertTriangle, Star, Zap, Info, Radio, Menu, MapPin, Clock, Loader2, Navigation, ClipboardList, Camera, Bell, BellOff, X, Mic, MicOff, Square, Stethoscope } from 'lucide-react';
+import { Flame, Shield, Activity, AlertTriangle, Star, Zap, Info, Radio, Menu, MapPin, Clock, Loader2, Navigation, ClipboardList, Camera, Bell, BellOff, X, Mic, MicOff, Square, Stethoscope, Video } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -28,6 +28,7 @@ import { clearLoginTimestamp } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { sendAlertEmailNotification } from '@/lib/email-notifications';
+import { VideoCall } from './VideoCall';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { DashboardHeader } from "./DashboardHeader";
 import { UserSidebar } from "./UserSidebar";
@@ -51,6 +52,7 @@ export function UserDashboard() {
   const [currentView, setCurrentView] = useState("home");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [videoCallOpen, setVideoCallOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<EmergencyType | 'all' | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [gpsStatus, setGpsStatus] = useState<'idle' | 'acquiring' | 'acquired' | 'denied'>('idle');
@@ -1394,11 +1396,11 @@ export function UserDashboard() {
               {/* Map preview — only shown when GPS acquired */}
               {gpsStatus === 'acquired' && userLocation && (
                 <div className="h-28 w-full relative overflow-hidden bg-slate-800">
-                  <img
-                    src={`https://staticmap.openstreetmap.de/staticmap.php?center=${userLocation[0]},${userLocation[1]}&zoom=14&size=400x112&markers=${userLocation[0]},${userLocation[1]},red`}
-                    alt="Location map"
-                    className="w-full h-full object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  <iframe
+                    title="location-preview"
+                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${userLocation[1]-0.005},${userLocation[0]-0.005},${userLocation[1]+0.005},${userLocation[0]+0.005}&layer=mapnik&marker=${userLocation[0]},${userLocation[1]}`}
+                    className="w-full h-full border-0 pointer-events-none"
+                    loading="lazy"
                   />
                   <div className="absolute bottom-0 inset-x-0 h-6 bg-gradient-to-t from-[#0d1526] to-transparent" />
                 </div>
@@ -1537,9 +1539,8 @@ export function UserDashboard() {
                   </button>
                   <button
                     onClick={() => { setConfirmOpen(false); confirmAlert(); }}
-                    disabled={!photoEvidence}
                     className={cn(
-                      "flex-1 h-12 rounded-xl font-bold text-sm text-white transition-all active:scale-95 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed",
+                      "flex-1 h-12 rounded-xl font-bold text-sm text-white transition-all active:scale-95 shadow-lg",
                       selectedType === 'fire' ? 'bg-orange-500 hover:bg-orange-400 shadow-orange-900/40' :
                       selectedType === 'crime' ? 'bg-blue-600 hover:bg-blue-500 shadow-blue-900/40' :
                       selectedType === 'medical' ? 'bg-red-600 hover:bg-red-500 shadow-red-900/40' :
@@ -1549,6 +1550,15 @@ export function UserDashboard() {
                     Send Alert
                   </button>
                 </div>
+
+                {/* Video Call Agency button */}
+                <button
+                  onClick={() => { setVideoCallOpen(true); }}
+                  className="w-full h-10 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-white/10 text-slate-300 hover:text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+                >
+                  <Video className="h-4 w-4 text-blue-400" />
+                  Call Agency Directly
+                </button>
               </div>
             </AlertDialogContent>
           </AlertDialog>
@@ -1558,5 +1568,10 @@ export function UserDashboard() {
     </SidebarProvider>
       </div>
     </>
+
+      {/* ── Video Call ───────────────────────────────────────────────────── */}
+      {videoCallOpen && (
+        <VideoCall onClose={() => setVideoCallOpen(false)} />
+      )}
   );
 }
