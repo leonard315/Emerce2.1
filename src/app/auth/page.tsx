@@ -224,14 +224,16 @@ function AuthContent() {
       setForgotOpen(false);
       setResetEmail('');
     } catch (error: any) {
+      console.error('[ForgotPassword] Error:', error.code, error.message);
       const code = error.code || '';
       const msg =
         code === 'auth/user-not-found' ? 'No account found with that email.' :
         code === 'auth/invalid-email' ? 'Please enter a valid email address.' :
         code === 'auth/missing-email' ? 'Please enter your email address.' :
         code === 'auth/too-many-requests' ? 'Too many attempts. Please wait a few minutes and try again.' :
+        code === 'auth/unauthorized-continue-uri' ? 'Domain not authorized. Please contact support.' :
         error.message;
-      toast({ variant: 'destructive', title: 'Failed to send reset email', description: msg });
+      toast({ variant: 'destructive', title: 'Failed to send reset email', description: `${msg} (${code})` });
     } finally {
       setResetLoading(false);
     }
