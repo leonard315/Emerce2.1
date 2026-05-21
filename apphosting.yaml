@@ -30,3 +30,15 @@ env:
     availability:
       - BUILD
       - RUNTIME
+
+  - variable: NEXT_PUBLIC_FCM_VAPID_KEY
+    value: YOUR_VAPID_KEY_HERE
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: FCM_SERVER_KEY
+    value: YOUR_SERVER_KEY_HERE
+    availability:
+      - BUILD
+      - RUNTIME

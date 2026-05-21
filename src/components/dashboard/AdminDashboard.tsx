@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { useAlertSound } from '@/hooks/use-alert-sound';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
+import { useFCMToken } from '@/hooks/use-fcm-token';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -223,6 +224,7 @@ export function AdminDashboard() {
   const users = usersData || [];
   const feedbacks = feedbackData || [];
   const { profile } = useAuth();
+  useFCMToken(profile?.uid); // Register for background push notifications
 
   // ── Sound alert when new pending report arrives ───────────────────────────
   useEffect(() => {

@@ -19,6 +19,7 @@ import { AgencySettings } from "./AgencySettings";
 import { AlertSoundButton } from "./AlertSoundButton";
 import { useAlertSound } from "@/hooks/use-alert-sound";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
+import { useFCMToken } from "@/hooks/use-fcm-token";
 import { SectorVectorGrid } from "./SectorVectorGrid";
 import { DashboardHeader } from "./DashboardHeader";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -92,6 +93,7 @@ export function MedicalDashboard() {
 
   const { soundEnabled, toggleSound, playNewIncident, playSiren, stopSiren, sirenActive } = useAlertSound();
   const { showNotification } = usePushNotifications();
+  useFCMToken(profile?.uid); // Register for background push notifications
   const prevCountRef = useRef<number | null>(null);
 
   useEffect(() => {
