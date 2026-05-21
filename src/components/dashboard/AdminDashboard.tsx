@@ -200,8 +200,33 @@ export function AdminDashboard() {
     setMounted(true);
   }, []);
 
+  const alertsQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'all_alerts'), orderBy('timestamp', 'desc'), limit(100));
+  }, [db]);
+
+  const usersQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(20));
+  }, [db]);
+
+  const feedbackQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'all_questionnaire_responses'), orderBy('timestamp', 'desc'), limit(50));
+  }, [db]);
+
+  const { data: alertsData } = useCollection<EmergencyAlert>(alertsQuery);
+  const { data: usersData } = useCollection<UserProfile>(usersQuery);
+  const { data: feedbackData } = useCollection<any>(feedbackQuery);
+
+  const alerts = alertsData || [];
+  const users = usersData || [];
+  const feedbacks = feedbackData || [];
+  const { profile } = useAuth();
+
+  // ── Sound alert when new pending report arrives ───────────────────────────
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || alerts.length === 0) return;
     const pending = alerts.filter(a => a.status === 'pending').length;
     if (prevPendingRef.current === null) {
       prevPendingRef.current = pending;
@@ -226,31 +251,7 @@ export function AdminDashboard() {
       stopSiren();
     }
     prevPendingRef.current = pending;
-  }, [alerts, mounted, playNewIncident, playSiren, stopSiren, showNotification, toast]);
-
-  const alertsQuery = useMemoFirebase(() => {
-    if (!db) return null;
-    return query(collection(db, 'all_alerts'), orderBy('timestamp', 'desc'), limit(100));
-  }, [db]);
-
-  const usersQuery = useMemoFirebase(() => {
-    if (!db) return null;
-    return query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(20));
-  }, [db]);
-
-  const feedbackQuery = useMemoFirebase(() => {
-    if (!db) return null;
-    return query(collection(db, 'all_questionnaire_responses'), orderBy('timestamp', 'desc'), limit(50));
-  }, [db]);
-
-  const { data: alertsData } = useCollection<EmergencyAlert>(alertsQuery);
-  const { data: usersData } = useCollection<UserProfile>(usersQuery);
-  const { data: feedbackData } = useCollection<any>(feedbackQuery);
-
-  const alerts = alertsData || [];
-  const users = usersData || [];
-  const feedbacks = feedbackData || [];
-  const { profile } = useAuth();
+  }, [alerts, mounted]); // eslint-disable-line
 
   // School-context display labels for alert types
   const alertTypeLabel: Record<string, string> = {
