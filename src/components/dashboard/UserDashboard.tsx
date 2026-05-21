@@ -53,6 +53,7 @@ export function UserDashboard() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [videoCallOpen, setVideoCallOpen] = useState(false);
+  const [videoCallAlertType, setVideoCallAlertType] = useState<'fire' | 'crime' | 'medical' | null>(null);
   const [selectedType, setSelectedType] = useState<EmergencyType | 'all' | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [gpsStatus, setGpsStatus] = useState<'idle' | 'acquiring' | 'acquired' | 'denied'>('idle');
@@ -1575,7 +1576,13 @@ export function UserDashboard() {
 
                 {/* Video Call Agency button */}
                 <button
-                  onClick={() => { setConfirmOpen(false); setVideoCallOpen(true); }}
+                  onClick={() => {
+                    // Save type BEFORE closing dialog (selectedType gets nulled on close)
+                    const type = selectedType === 'all' ? 'medical' : selectedType;
+                    setVideoCallAlertType(type as 'fire' | 'crime' | 'medical');
+                    setConfirmOpen(false);
+                    setVideoCallOpen(true);
+                  }}
                   className="w-full h-10 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-white/10 text-slate-300 hover:text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2"
                 >
                   <Video className="h-4 w-4 text-blue-400" />
@@ -1594,8 +1601,8 @@ export function UserDashboard() {
       {/* Video Call */}
       {videoCallOpen && (
         <VideoCall
-          onClose={() => setVideoCallOpen(false)}
-          alertType={selectedType === 'all' ? 'medical' : selectedType ?? undefined}
+          onClose={() => { setVideoCallOpen(false); setVideoCallAlertType(null); }}
+          alertType={videoCallAlertType ?? undefined}
         />
       )}
     </>

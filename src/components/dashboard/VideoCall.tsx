@@ -272,12 +272,20 @@ export function VideoCall({ onClose, targetUserId, targetUserName, alertType }: 
         await pc.setLocalDescription(offer);
 
         // Write to agency channel — any agency user listening will see this
-        await set(ref(rtdb, `agency_calls/${agencyChannel}`), {
+        await set(ref(rtdb, `calls/${roomId}`), {
           roomId,
           offer: { type: offer.type, sdp: offer.sdp },
           callerId: profile.uid,
           callerName: profile.name,
           callerRole: profile.role,
+          createdAt: Date.now(),
+        });
+
+        // Also signal the agency channel so dashboards can pick it up
+        await set(ref(rtdb, `agency_calls/${agencyChannel}`), {
+          roomId,
+          callerId: profile.uid,
+          callerName: profile.name,
           createdAt: Date.now(),
         });
 

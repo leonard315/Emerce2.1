@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { collection, query, orderBy, doc, writeBatch, serverTimestamp as firestoreTimestamp, getDoc, deleteDoc, increment, updateDoc } from 'firebase/firestore';
-import { ref, push, serverTimestamp as rtdbTimestamp } from 'firebase/database';
+import { ref, push, onValue, off, serverTimestamp as rtdbTimestamp } from 'firebase/database';
 import { useFirestore, useCollection, useDatabase, useMemoFirebase } from '@/firebase';
 import { EmergencyAlert, AlertStatus } from '@/lib/types';
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,24 @@ export function PoliceDashboard() {
   const [currentView, setCurrentView] = useState("dashboard");
   const [falseReportConfirm, setFalseReportConfirm] = useState<EmergencyAlert | null>(null);
   const [videoCallOpen, setVideoCallOpen] = useState(false);
+  const [incomingAgencyCall, setIncomingAgencyCall] = useState<{roomId: string; callerName: string} | null>(null);
+
+  // ── Listen for incoming video calls from users ────────────────────────────
+  useEffect(() => {
+    if (!rtdb) return;
+    const callRef = ref(rtdb, 'agency_calls/security');
+    const unsub = onValue(callRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.val();
+        if (Date.now() - data.createdAt < 60000) {
+          setIncomingAgencyCall({ roomId: data.roomId, callerName: data.callerName });
+        }
+      } else {
+        setIncomingAgencyCall(null);
+      }
+    });
+    return () => off(callRef);
+  }, [rtdb]);
 
   const alertsQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -548,6 +566,23 @@ export function PoliceDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── Incoming call banner ─────────────────────────────────────────── */}
+      {incomingAgencyCall && !videoCallOpen && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 border border-blue-500/40 rounded-2xl px-5 py-4 shadow-2xl flex items-center gap-4 min-w-[300px]">
+          <div className="h-10 w-10 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+            <Video className="h-5 w-5 text-blue-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-white">Incoming Video Call</p>
+            <p className="text-xs text-slate-400 truncate">From: {incomingAgencyCall.callerName}</p>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => setIncomingAgencyCall(null)} className="h-9 px-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-bold">Decline</button>
+            <button onClick={() => { setVideoCallOpen(true); }} className="h-9 px-3 rounded-xl bg-green-600 hover:bg-green-500 text-white text-xs font-bold">Answer</button>
+          </div>
+        </div>
+      )}
 
       {/* ── Video Call ───────────────────────────────────────────────────── */}
       {videoCallOpen && (
