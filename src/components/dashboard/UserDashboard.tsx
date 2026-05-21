@@ -1593,7 +1593,10 @@ export function UserDashboard() {
 
       {/* Video Call */}
       {videoCallOpen && (
-        <VideoCall onClose={() => setVideoCallOpen(false)} />
+        <VideoCall
+          onClose={() => setVideoCallOpen(false)}
+          alertType={selectedType === 'all' ? 'medical' : selectedType ?? undefined}
+        />
       )}
     </>
   );

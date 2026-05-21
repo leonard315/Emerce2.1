@@ -21,15 +21,20 @@ const ICE_SERVERS: RTCConfiguration = {
 
 interface VideoCallProps {
   onClose: () => void;
-  targetUserId?: string;   // if set, auto-call this user
+  targetUserId?: string;   // direct call to specific user
   targetUserName?: string;
+  alertType?: 'fire' | 'crime' | 'medical' | 'all'; // broadcast to agency type
 }
 
 type CallState = 'idle' | 'calling' | 'incoming' | 'connected' | 'ended';
 
-export function VideoCall({ onClose, targetUserId, targetUserName }: VideoCallProps) {
+export function VideoCall({ onClose, targetUserId, targetUserName, alertType }: VideoCallProps) {
   const rtdb = useDatabase();
   const { profile } = useAuth();
+
+  // Determine agency channel from alertType for broadcast calls
+  const agencyChannel = alertType === 'fire' ? 'drrm' : alertType === 'crime' ? 'security' : alertType === 'medical' ? 'clinic' : null;
+  const agencyLabel = alertType === 'fire' ? 'DRRM Office' : alertType === 'crime' ? 'Security Office' : alertType === 'medical' ? 'School Clinic' : targetUserName || 'Agency';
 
   const [callState, setCallState] = useState<CallState>('idle');
   const [micOn, setMicOn] = useState(true);
@@ -241,12 +246,58 @@ export function VideoCall({ onClose, targetUserId, targetUserName }: VideoCallPr
     return () => off(signalRef);
   }, [rtdb, profile?.uid, callState]);
 
-  // ── Auto-call if targetUserId provided ───────────────────────────────────
+  // ── Auto-call: direct user OR broadcast to agency channel ───────────────
   useEffect(() => {
-    if (targetUserId && targetUserName && callState === 'idle') {
+    if (callState !== 'idle' || !profile || !rtdb) return;
+
+    if (targetUserId && targetUserName) {
+      // Direct call to specific user
       startCall(targetUserId, targetUserName);
+    } else if (agencyChannel) {
+      // Broadcast call to agency channel — write to shared channel room
+      const broadcastCall = async () => {
+        setError(null);
+        const stream = await getLocalStream();
+        if (!stream) return;
+
+        const roomId = `broadcast_${agencyChannel}_${profile.uid}_${Date.now()}`;
+        roomIdRef.current = roomId;
+        setCallRoomId(roomId);
+        setCallState('calling');
+
+        const pc = createPeerConnection(roomId, true);
+        if (!pc) return;
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        // Write to agency channel — any agency user listening will see this
+        await set(ref(rtdb, `agency_calls/${agencyChannel}`), {
+          roomId,
+          offer: { type: offer.type, sdp: offer.sdp },
+          callerId: profile.uid,
+          callerName: profile.name,
+          callerRole: profile.role,
+          createdAt: Date.now(),
+        });
+
+        // Listen for answer
+        onValue(ref(rtdb, `calls/${roomId}/answer`), async (snap) => {
+          if (snap.exists() && pc.currentRemoteDescription === null) {
+            await pc.setRemoteDescription(new RTCSessionDescription(snap.val()));
+          }
+        });
+
+        // Listen for callee ICE candidates
+        onValue(ref(rtdb, `calls/${roomId}/calleeCandidates`), (snap) => {
+          snap.forEach(child => {
+            pc.addIceCandidate(new RTCIceCandidate(child.val())).catch(() => {});
+          });
+        });
+      };
+      broadcastCall();
     }
-  }, [targetUserId, targetUserName]); // eslint-disable-line
+  }, [agencyChannel, targetUserId, targetUserName, callState]); // eslint-disable-line
 
   // ── Toggle mic/cam ────────────────────────────────────────────────────────
   const toggleMic = () => {
@@ -296,7 +347,7 @@ export function VideoCall({ onClose, targetUserId, targetUserName }: VideoCallPr
             <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
             <span className="text-sm font-bold text-white">
               {callState === 'idle' && 'Video Call'}
-              {callState === 'calling' && `Calling ${targetUserName || ''}...`}
+              {callState === 'calling' && `Calling ${agencyLabel}...`}
               {callState === 'incoming' && `Incoming call from ${incomingCallerName}`}
               {callState === 'connected' && 'Connected'}
               {callState === 'ended' && 'Call ended'}
@@ -330,8 +381,8 @@ export function VideoCall({ onClose, targetUserId, targetUserName }: VideoCallPr
               </div>
               {callState === 'calling' && (
                 <div className="text-center">
-                  <p className="text-white font-bold">Calling {targetUserName}...</p>
-                  <p className="text-slate-400 text-sm mt-1">Waiting for answer</p>
+                  <p className="text-white font-bold">Calling {agencyLabel}...</p>
+                  <p className="text-slate-400 text-sm mt-1">Waiting for an agent to answer</p>
                   <div className="flex items-center justify-center gap-1 mt-3">
                     {[0, 1, 2].map(i => (
                       <div key={i} className="h-2 w-2 rounded-full bg-green-500 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
@@ -420,7 +471,7 @@ export function VideoCall({ onClose, targetUserId, targetUserName }: VideoCallPr
           )}
 
           {/* Idle — start call button if no target */}
-          {callState === 'idle' && !targetUserId && (
+          {callState === 'idle' && !targetUserId && !agencyChannel && (
             <p className="text-slate-400 text-sm">Select a user to call from the dashboard</p>
           )}
 
