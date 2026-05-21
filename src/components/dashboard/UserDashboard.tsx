@@ -1388,25 +1388,36 @@ export function UserDashboard() {
 
           {/* ── Step 1: Alert Detail Dialog ──────────────────────────────── */}
           <AlertDialog open={confirmOpen} onOpenChange={(open) => { if (!open) { setConfirmOpen(false); setSelectedType(null); setManualLocation(''); setPhotoEvidence(null); setVoiceNote(null); if (isRecording) stopRecording(); } }}>
-            <AlertDialogContent className="bg-[#0d1526] border border-white/10 rounded-3xl p-0 max-w-sm w-full overflow-hidden shadow-2xl">
+            <AlertDialogContent className="bg-[#0d1526] border border-white/10 rounded-3xl p-0 max-w-sm w-full overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
               <AlertDialogHeader className="sr-only">
                 <AlertDialogTitle>Report Emergency</AlertDialogTitle>
               </AlertDialogHeader>
 
               {/* Map preview — only shown when GPS acquired */}
               {gpsStatus === 'acquired' && userLocation && (
-                <div className="h-28 w-full relative overflow-hidden bg-slate-800">
-                  <iframe
-                    title="location-preview"
-                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${userLocation[1]-0.005},${userLocation[0]-0.005},${userLocation[1]+0.005},${userLocation[0]+0.005}&layer=mapnik&marker=${userLocation[0]},${userLocation[1]}`}
-                    className="w-full h-full border-0 pointer-events-none"
-                    loading="lazy"
-                  />
-                  <div className="absolute bottom-0 inset-x-0 h-6 bg-gradient-to-t from-[#0d1526] to-transparent" />
+                <div className="h-28 w-full relative overflow-hidden bg-slate-900">
+                  {/* Tile-based map using OpenStreetMap tiles directly */}
+                  <div className="w-full h-full relative">
+                    <img
+                      src={`https://maps.googleapis.com/maps/api/staticmap?center=${userLocation[0]},${userLocation[1]}&zoom=15&size=400x112&scale=2&maptype=roadmap&markers=color:red%7C${userLocation[0]},${userLocation[1]}&style=element:geometry%7Ccolor:0x212121&style=element:labels.text.fill%7Ccolor:0x757575&key=`}
+                      alt="Location"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback: show coordinates as styled card
+                        const el = e.currentTarget.parentElement!;
+                        el.innerHTML = `<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0f172a;gap:4px"><svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='#22c55e' stroke-width='2'><path d='M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z'/><circle cx='12' cy='10' r='3'/></svg><span style='color:#22c55e;font-size:11px;font-weight:700'>${userLocation[0].toFixed(5)}, ${userLocation[1].toFixed(5)}</span></div>`;
+                      }}
+                    />
+                  </div>
+                  <div className="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-[#0d1526] to-transparent" />
+                  {/* GPS pin overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="h-5 w-5 rounded-full bg-green-500 border-2 border-white shadow-lg shadow-green-500/50 animate-pulse" />
+                  </div>
                 </div>
               )}
 
-              <div className="p-5 space-y-3">
+              <div className="p-5 space-y-3 overflow-y-auto flex-1">
                 {/* Alert type header */}
                 <div className="flex items-center gap-3">
                   <div className={cn(
