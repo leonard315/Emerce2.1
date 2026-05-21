@@ -1578,11 +1578,12 @@ export function UserDashboard() {
       </SidebarInset>
     </SidebarProvider>
       </div>
-    </>
 
-      {/* ── Video Call ───────────────────────────────────────────────────── */}
+
+      {/* Video Call */}
       {videoCallOpen && (
         <VideoCall onClose={() => setVideoCallOpen(false)} />
       )}
+    </>
   );
 }
