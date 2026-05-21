@@ -215,6 +215,13 @@ export function AdminDashboard() {
   const feedbacks = feedbackData || [];
   const { profile } = useAuth();
 
+  // School-context display labels for alert types
+  const alertTypeLabel: Record<string, string> = {
+    fire:    'DRRM',
+    crime:   'Security',
+    medical: 'Clinic',
+  };
+
   const chartData = useMemo(() => {
     return Array.from({ length: 7 }).map((_, i) => {
       const date = subDays(new Date(), 6 - i);
@@ -460,9 +467,9 @@ export function AdminDashboard() {
               {/* Stats row 2 — agency breakdown */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
-                  { label: 'Fire', sub: 'Bureau of Fire Protection', value: alerts.filter(a => a.type === 'fire').length, icon: Flame, color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
-                  { label: 'Crime', sub: 'Philippine National Police', value: alerts.filter(a => a.type === 'crime').length, icon: Shield, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
-                  { label: 'Medical', sub: 'Emergency Medical Care', value: alerts.filter(a => a.type === 'medical').length, icon: Heart, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' },
+                  { label: 'DRRM', sub: 'Disaster Risk Reduction', value: alerts.filter(a => a.type === 'fire').length, icon: Flame, color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
+                  { label: 'Security', sub: 'School Security Office', value: alerts.filter(a => a.type === 'crime').length, icon: Shield, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+                  { label: 'Clinic', sub: 'School Health Services', value: alerts.filter(a => a.type === 'medical').length, icon: Heart, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' },
                   { label: 'Responding', sub: 'On their way', value: alerts.filter(a => a.status === 'responding').length, icon: Navigation, color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' },
                 ].map((item, i) => (
                   <Card key={i} className={cn("rounded-2xl p-4 border", item.bg, item.border)}>
@@ -518,7 +525,7 @@ export function AdminDashboard() {
                     <CardHeader className="flex flex-row items-center justify-between py-3 px-5 border-b border-white/5">
                       <CardTitle className="text-sm font-bold text-white flex items-center gap-2">
                         <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-                        Live Emergency Map
+                        Live Incident Map
                         <Badge className="bg-red-500/10 text-red-400 border-red-500/20 text-[10px] font-bold ml-1">
                           {activeAlerts.length} active
                         </Badge>
@@ -558,7 +565,7 @@ export function AdminDashboard() {
                              <Heart className="h-4 w-4" />}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-white capitalize">{alert.type} Emergency</p>
+                            <p className="text-xs font-bold text-white">{alertTypeLabel[alert.type] ?? alert.type} Emergency</p>
                             <p className="text-[10px] text-slate-500 truncate">
                               {alert.location
                                 ? `${alert.location.lat.toFixed(4)}, ${alert.location.lng.toFixed(4)}`
@@ -652,7 +659,7 @@ export function AdminDashboard() {
                          <Heart className="h-4 w-4 text-red-400" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-white capitalize">{alert.type} Emergency</p>
+                        <p className="text-sm font-bold text-white">{alertTypeLabel[alert.type] ?? alert.type} Emergency</p>
                         <p className="text-xs text-slate-500 truncate">{alert.userName}</p>
                         <p className="text-[10px] text-slate-600">
                           {alert.timestamp?.seconds ? format(alert.timestamp.toDate(), 'MMM d, HH:mm') : 'Live'}
@@ -688,7 +695,7 @@ export function AdminDashboard() {
                         <TableCell className="px-6 py-4">
                           <div className="flex items-center gap-2">
                             <div className={cn("h-2.5 w-2.5 rounded-full flex-shrink-0", alert.type === 'fire' ? 'bg-orange-500' : alert.type === 'crime' ? 'bg-blue-500' : 'bg-red-500')} />
-                            <span className="text-sm font-bold text-white capitalize">{alert.type}</span>
+                            <span className="text-sm font-bold text-white">{alertTypeLabel[alert.type] ?? alert.type}</span>
                           </div>
                         </TableCell>
                         <TableCell className="text-slate-300 text-sm font-medium">{alert.userName}</TableCell>
@@ -841,7 +848,7 @@ export function AdminDashboard() {
                         <TableCell className="px-6 py-3">
                           <div className="flex items-center gap-2">
                             <div className={cn("h-2 w-2 rounded-full", alert.type === 'fire' ? 'bg-orange-500' : alert.type === 'crime' ? 'bg-blue-500' : 'bg-red-500')} />
-                            <span className="text-sm font-bold text-white capitalize">{alert.type}</span>
+                            <span className="text-sm font-bold text-white">{alertTypeLabel[alert.type] ?? alert.type}</span>
                           </div>
                         </TableCell>
                         <TableCell className="text-slate-300 text-sm">{alert.userName}</TableCell>
