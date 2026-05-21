@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { collection, query, orderBy, limit, doc, setDoc, deleteDoc, writeBatch, serverTimestamp as firestoreTimestamp, increment } from 'firebase/firestore';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { EmergencyAlert, UserProfile } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { useAlertSound } from '@/hooks/use-alert-sound';
+import { usePushNotifications } from '@/hooks/use-push-notifications';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +47,8 @@ import {
   X,
   Loader2,
   Trash2,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import { format, subDays, isSameDay } from 'date-fns';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from 'recharts';
@@ -187,9 +191,42 @@ export function AdminDashboard() {
   const [deletingUser, setDeletingUser] = useState(false);
   const { toast } = useToast();
 
+  // ── Alert sound + push notifications ─────────────────────────────────────
+  const { soundEnabled, toggleSound, playNewIncident, playSiren, stopSiren, sirenActive } = useAlertSound();
+  const { showNotification } = usePushNotifications();
+  const prevPendingRef = useRef<number | null>(null);
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    const pending = alerts.filter(a => a.status === 'pending').length;
+    if (prevPendingRef.current === null) {
+      prevPendingRef.current = pending;
+      return;
+    }
+    if (pending > prevPendingRef.current) {
+      const newest = alerts.find(a => a.status === 'pending');
+      const soundType = newest?.type === 'fire' ? 'fire' : newest?.type === 'crime' ? 'police' : newest?.type === 'medical' ? 'medical' : 'all';
+      playNewIncident(soundType);
+      playSiren(soundType);
+      const typeLabel = newest?.type === 'fire' ? '🔥 DRRM' : newest?.type === 'crime' ? '🚔 Security' : '🚑 Clinic';
+      showNotification(`${typeLabel} Emergency Alert`, {
+        body: newest ? `${newest.userName} reported an emergency${(newest as any).exactAddress ? ` at ${(newest as any).exactAddress}` : ''}` : 'A new emergency has been reported.',
+        tag: 'admin-alert',
+        requireInteraction: true,
+      });
+      toast({
+        title: `🚨 New ${typeLabel} Alert`,
+        description: newest ? `${newest.userName} — ${(newest as any).exactAddress || 'Location pending'}` : 'New emergency report received.',
+      });
+    } else if (pending < prevPendingRef.current) {
+      stopSiren();
+    }
+    prevPendingRef.current = pending;
+  }, [alerts, mounted, playNewIncident, playSiren, stopSiren, showNotification, toast]);
 
   const alertsQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -407,6 +444,21 @@ export function AdminDashboard() {
                     onClick={() => setDemoMode(true)}>
                     <Users className="h-3.5 w-3.5" /> View as User
                   </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleSound}
+                    className={`h-8 text-xs gap-1.5 ${soundEnabled ? 'border-orange-500/30 text-orange-400 hover:bg-orange-500/10' : 'border-white/10 text-slate-500 hover:bg-white/5'}`}
+                    title={soundEnabled ? 'Mute alerts' : 'Unmute alerts'}
+                  >
+                    {soundEnabled ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+                    {soundEnabled ? 'Sound On' : 'Sound Off'}
+                  </Button>
+                  {sirenActive && (
+                    <Button variant="outline" size="sm" onClick={stopSiren} className="h-8 text-xs border-red-500/30 text-red-400 hover:bg-red-500/10 gap-1.5 animate-pulse">
+                      <Siren className="h-3.5 w-3.5" /> Stop Siren
+                    </Button>
+                  )}
                   <Badge className="bg-green-500/10 text-green-500 border-green-500/20 text-xs font-bold gap-1.5 px-3 py-1.5">
                     <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /> System Online
                   </Badge>
