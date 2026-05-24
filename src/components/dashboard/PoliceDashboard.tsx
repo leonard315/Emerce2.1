@@ -305,10 +305,22 @@ export function PoliceDashboard() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setVideoCallOpen(true)}
-                className="h-10 px-3 border-blue-500/30 text-blue-400 hover:bg-blue-500/10 gap-2 font-bold"
+                onClick={() => {
+                  if (incomingAgencyCall) {
+                    setVideoCallOpen(true);
+                  } else {
+                    toast({ title: 'No incoming call', description: 'Waiting for a user to call this office.' });
+                  }
+                }}
+                className={cn(
+                  "h-10 px-3 gap-2 font-bold",
+                  incomingAgencyCall
+                    ? "border-green-500/50 text-green-400 hover:bg-green-500/10 animate-pulse"
+                    : "border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+                )}
               >
-                <Video className="h-4 w-4" /> Video Call
+                <Video className="h-4 w-4" />
+                {incomingAgencyCall ? 'Answer Call' : 'Video Call'}
               </Button>
             </div>
 
@@ -608,6 +620,7 @@ export function PoliceDashboard() {
         <VideoCall
           onClose={() => { setVideoCallOpen(false); setIncomingAgencyCall(null); }}
           incomingRoomId={incomingAgencyCall?.roomId}
+          incomingCallerNameProp={incomingAgencyCall?.callerName}
         />
       )}
     </SidebarProvider>

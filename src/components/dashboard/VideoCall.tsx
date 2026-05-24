@@ -38,6 +38,8 @@ export interface VideoCallProps {
   alertType?: 'fire' | 'crime' | 'medical' | 'all';
   /** Pre-supplied roomId when answering an incoming agency broadcast */
   incomingRoomId?: string;
+  /** Caller name to display when answering an incoming call */
+  incomingCallerNameProp?: string;
 }
 
 type CallState = 'idle' | 'calling' | 'incoming' | 'connecting' | 'connected' | 'ended';
@@ -67,6 +69,7 @@ export function VideoCall({
   targetUserName,
   alertType,
   incomingRoomId,
+  incomingCallerNameProp,
 }: VideoCallProps) {
   const rtdb = useDatabase();
   const { profile } = useAuth();
@@ -93,7 +96,7 @@ export function VideoCall({
   const [minimized, setMinimized] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [incomingCallerId, setIncomingCallerId] = useState<string | null>(null);
-  const [incomingCallerName, setIncomingCallerName] = useState('');
+  const [incomingCallerName, setIncomingCallerName] = useState(incomingCallerNameProp ?? '');
   const [error, setError] = useState<string | null>(null);
   const [duration, setDuration] = useState(0);
   const [quality, setQuality] = useState<ConnectionQuality>('unknown');
@@ -187,7 +190,8 @@ export function VideoCall({
       if (profile?.uid) {
         await remove(ref(rtdb, `call_signals/${profile.uid}`)).catch(() => {});
       }
-      if (agencyChannel) {
+      // Only remove agency_calls signal on explicit hangup (not when agency answers)
+      if (agencyChannel && reason === 'hangup') {
         await remove(ref(rtdb, `agency_calls/${agencyChannel}`)).catch(() => {});
       }
     }
@@ -406,6 +410,13 @@ export function VideoCall({
 
     // Clear signal
     await remove(ref(rtdb, `call_signals/${profile.uid}`)).catch(() => {});
+    // Clear agency broadcast signal so no other agent answers
+    if (roomId!.startsWith('broadcast_')) {
+      const parts = roomId!.split('_');
+      if (parts.length >= 2) {
+        await remove(ref(rtdb, `agency_calls/${parts[1]}`)).catch(() => {});
+      }
+    }
 
     const callerCandRef = ref(rtdb, `calls/${roomId}/callerCandidates`);
     onValue(callerCandRef, (snap) => {
