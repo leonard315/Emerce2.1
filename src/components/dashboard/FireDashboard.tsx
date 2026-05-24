@@ -60,7 +60,6 @@ export function FireDashboard() {
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState("dashboard");
   const [falseReportConfirm, setFalseReportConfirm] = useState<EmergencyAlert | null>(null);
-  const [videoCallOpen, setVideoCallOpen] = useState(false);
   const [incomingAgencyCall, setIncomingAgencyCall] = useState<{roomId: string; callerName: string} | null>(null);
 
   // ── Listen for incoming video calls from users ────────────────────────────
@@ -312,22 +311,16 @@ export function FireDashboard() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  if (incomingAgencyCall) {
-                    setVideoCallOpen(true);
-                  } else {
-                    toast({ title: 'No incoming call', description: 'Waiting for a user to call this office.' });
-                  }
-                }}
-                className={cn(
-                  "h-10 px-3 gap-2 font-bold",
-                  incomingAgencyCall
-                    ? "border-green-500/50 text-green-400 hover:bg-green-500/10 animate-pulse"
-                    : "border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
-                )}
+                disabled
+                className="h-10 px-3 border-orange-500/20 text-orange-400/60 gap-2 font-bold cursor-default"
               >
                 <Video className="h-4 w-4" />
-                {incomingAgencyCall ? 'Answer Call' : 'Video Call'}
+                {incomingAgencyCall ? (
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+                    Incoming...
+                  </span>
+                ) : 'Video Call'}
               </Button>
             </div>
 
@@ -695,47 +688,12 @@ export function FireDashboard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* ── Incoming call banner ─────────────────────────────────────────── */}
-      {incomingAgencyCall && !videoCallOpen && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[150] animate-in slide-in-from-bottom-4 duration-300">
-          <div className="bg-[#0d1526] border border-orange-500/50 rounded-2xl px-5 py-4 shadow-2xl flex items-center gap-4 min-w-[320px] max-w-sm">
-            {/* Pulsing avatar */}
-            <div className="relative flex-shrink-0">
-              <div className="absolute inset-0 rounded-full bg-orange-500/20 animate-ping" />
-              <div className="h-11 w-11 rounded-full bg-orange-500/20 border border-orange-500/40 flex items-center justify-center">
-                <Video className="h-5 w-5 text-orange-400" />
-              </div>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-black text-white">Incoming Video Call</p>
-              <p className="text-xs text-slate-400 truncate mt-0.5">From: {incomingAgencyCall.callerName}</p>
-            </div>
-            <div className="flex gap-2 flex-shrink-0">
-              <button
-                onClick={() => setIncomingAgencyCall(null)}
-                className="h-10 w-10 rounded-full bg-red-600 hover:bg-red-500 flex items-center justify-center transition-colors"
-                aria-label="Decline"
-              >
-                <PhoneOff className="h-4 w-4 text-white" />
-              </button>
-              <button
-                onClick={() => setVideoCallOpen(true)}
-                className="h-10 w-10 rounded-full bg-green-500 hover:bg-green-400 flex items-center justify-center transition-colors animate-pulse"
-                aria-label="Answer"
-              >
-                <Phone className="h-4 w-4 text-white" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Video Call ───────────────────────────────────────────────────── */}
-      {videoCallOpen && (
+      {/* ── Video Call — auto-shows when incoming call arrives ───────────── */}
+      {incomingAgencyCall && (
         <VideoCall
-          onClose={() => { setVideoCallOpen(false); setIncomingAgencyCall(null); }}
-          incomingRoomId={incomingAgencyCall?.roomId}
-          incomingCallerNameProp={incomingAgencyCall?.callerName}
+          onClose={() => setIncomingAgencyCall(null)}
+          incomingRoomId={incomingAgencyCall.roomId}
+          incomingCallerNameProp={incomingAgencyCall.callerName}
         />
       )}
     </SidebarProvider>
