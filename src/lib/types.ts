@@ -11,6 +11,7 @@ export interface UserProfile {
   sex?: string;
   falseReportCount?: number;
   isDeactivated?: boolean;
+  fcmToken?: string;
 }
 
 export interface UserNotification {
@@ -49,8 +50,11 @@ export interface EmergencyAlert {
   resolvedTime?: any;
   aiAnalysis?: string;
   photoEvidenceUrl?: string;
+  voiceNoteUrl?: string;
   hasPhoto?: boolean;
   hasVoice?: boolean;
+  falseReportBy?: string;
+  falseReportTime?: any;
 }
 
 export interface SystemLog {

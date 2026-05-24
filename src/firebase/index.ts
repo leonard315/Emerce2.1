@@ -62,11 +62,19 @@ export function getSdks(firebaseApp: FirebaseApp) {
   const auth = getAuth(firebaseApp);
   // Ensure session persists across browser restarts
   setPersistence(auth, browserLocalPersistence).catch(() => {});
+
+  let database = null;
+  try {
+    database = getDatabase(firebaseApp);
+  } catch {
+    // Realtime Database not configured (no databaseURL) — safe to ignore
+  }
+
   return {
     firebaseApp,
     auth,
     firestore: getFirestore(firebaseApp),
-    database: getDatabase(firebaseApp)
+    database,
   };
 }
 

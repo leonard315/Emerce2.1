@@ -39,9 +39,9 @@ service cloud.firestore {
     }
 
     // School roles: security=police, drrm=fire, clinic=medical
-    // These are stored in roles_general_users but need agency write access
+    // These are stored in their respective agency role collections
     function isSchoolAgency() {
-      return isSignedIn() && exists(/databases/$(database)/documents/roles_general_users/$(request.auth.uid));
+      return isFireAgency() || isPoliceAgency() || isMedicalAgency();
     }
 
     // ── User profiles ───────────────────────────────────────────────────────
@@ -181,6 +181,13 @@ service cloud.firestore {
     match /logs/{logId} {
       allow create: if isSignedIn();
       allow read, list: if isAdmin();
+    }
+
+    // ── FCM tokens ───────────────────────────────────────────────────────────
+
+    match /fcm_tokens/{userId} {
+      allow read, write: if isSignedIn() && isOwner(userId);
+      allow list: if isAdmin();
     }
   }
 }

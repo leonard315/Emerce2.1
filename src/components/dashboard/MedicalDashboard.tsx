@@ -8,7 +8,7 @@ import { EmergencyAlert, AlertStatus } from '@/lib/types';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from "@/hooks/use-toast";
-import { HeartPulse, CheckCircle2, Navigation, MapPin, Zap, BrainCircuit, Radio, Clock, User, ChevronRight, AlertTriangle, Trash2, Activity, Video } from 'lucide-react';
+import { HeartPulse, CheckCircle2, Navigation, MapPin, Zap, BrainCircuit, Radio, Clock, User, ChevronRight, AlertTriangle, Trash2, Activity, Video, Phone, PhoneOff } from 'lucide-react';
 import { format } from 'date-fns';
 import { analyzeSituation } from '@/ai/flows/analyze-situation-flow';
 import { cn } from '@/lib/utils';
@@ -528,24 +528,44 @@ export function MedicalDashboard() {
 
       {/* ── Incoming call banner ─────────────────────────────────────────── */}
       {incomingAgencyCall && !videoCallOpen && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 border border-red-500/40 rounded-2xl px-5 py-4 shadow-2xl flex items-center gap-4 min-w-[300px]">
-          <div className="h-10 w-10 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
-            <Video className="h-5 w-5 text-red-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-white">Incoming Video Call</p>
-            <p className="text-xs text-slate-400 truncate">From: {incomingAgencyCall.callerName}</p>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={() => setIncomingAgencyCall(null)} className="h-9 px-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-bold">Decline</button>
-            <button onClick={() => setVideoCallOpen(true)} className="h-9 px-3 rounded-xl bg-green-600 hover:bg-green-500 text-white text-xs font-bold">Answer</button>
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[150] animate-in slide-in-from-bottom-4 duration-300">
+          <div className="bg-[#0d1526] border border-red-500/50 rounded-2xl px-5 py-4 shadow-2xl flex items-center gap-4 min-w-[320px] max-w-sm">
+            <div className="relative flex-shrink-0">
+              <div className="absolute inset-0 rounded-full bg-red-500/20 animate-ping" />
+              <div className="h-11 w-11 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center">
+                <Video className="h-5 w-5 text-red-400" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-black text-white">Incoming Video Call</p>
+              <p className="text-xs text-slate-400 truncate mt-0.5">From: {incomingAgencyCall.callerName}</p>
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              <button
+                onClick={() => setIncomingAgencyCall(null)}
+                className="h-10 w-10 rounded-full bg-red-600 hover:bg-red-500 flex items-center justify-center transition-colors"
+                aria-label="Decline"
+              >
+                <PhoneOff className="h-4 w-4 text-white" />
+              </button>
+              <button
+                onClick={() => setVideoCallOpen(true)}
+                className="h-10 w-10 rounded-full bg-green-500 hover:bg-green-400 flex items-center justify-center transition-colors animate-pulse"
+                aria-label="Answer"
+              >
+                <Phone className="h-4 w-4 text-white" />
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* ── Video Call ───────────────────────────────────────────────────── */}
       {videoCallOpen && (
-        <VideoCall onClose={() => setVideoCallOpen(false)} />
+        <VideoCall
+          onClose={() => { setVideoCallOpen(false); setIncomingAgencyCall(null); }}
+          incomingRoomId={incomingAgencyCall?.roomId}
+        />
       )}
     </SidebarProvider>
   );

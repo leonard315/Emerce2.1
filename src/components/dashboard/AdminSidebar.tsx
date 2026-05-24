@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from 'firebase/auth';
-import { useAuth as useFirebase } from '@/firebase';
+import { useAuth as useFirebaseContext } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -40,7 +40,7 @@ interface AdminSidebarProps {
 }
 
 export function AdminSidebar({ currentView, onViewChange }: AdminSidebarProps) {
-  const auth = useFirebase();
+  const auth = useFirebaseContext();
   const router = useRouter();
   
   const handleLogout = async () => {

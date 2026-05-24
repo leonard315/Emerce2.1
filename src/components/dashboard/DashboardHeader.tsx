@@ -35,9 +35,16 @@ export function DashboardHeader({ sidebarTrigger }: DashboardHeaderProps = {}) {
   useEffect(() => {
     if (!rtdb || !user || !profile) return;
 
+    // Map school roles to their agency channel for presence tracking
+    const presenceRole =
+      profile.role === 'drrm' ? 'fire' :
+      profile.role === 'security' ? 'police' :
+      profile.role === 'clinic' ? 'medical' :
+      profile.role;
+
     // Presence logic for Agency users
-    if (['fire', 'police', 'medical'].includes(profile.role)) {
-      const presenceRef = ref(rtdb, `status/${profile.role}/${user.uid}`);
+    if (['fire', 'police', 'medical', 'drrm', 'security', 'clinic'].includes(profile.role)) {
+      const presenceRef = ref(rtdb, `status/${presenceRole}/${user.uid}`);
       set(presenceRef, {
         name: profile.name,
         lastActive: serverTimestamp(),

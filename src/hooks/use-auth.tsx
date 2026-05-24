@@ -2,7 +2,7 @@
 'use client';
 
 import { createContext, useContext, ReactNode, useMemo, useEffect, useState } from 'react';
-import { useUser, useDoc, useFirestore } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { UserProfile } from '@/lib/types';
 import { doc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
@@ -16,7 +16,12 @@ interface AuthContextType {
   sessionWarning: boolean;
 }
 
-const AuthContext = createContext<AuthContextType>({ user: null, profile: null, loading: true, sessionWarning: false });
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  profile: null,
+  loading: true,
+  sessionWarning: false,
+});
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { user, isUserLoading: userLoading } = useUser();
@@ -35,9 +40,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoginTimestamp();
     }
 
-    // Check every minute if session is about to expire (within 10 minutes)
     const SESSION_MAX_MS = 7 * 24 * 60 * 60 * 1000;
     const WARNING_BEFORE_MS = 10 * 60 * 1000; // 10 minutes
+
     const interval = setInterval(() => {
       const ts = getLoginTimestamp();
       if (!ts) return;
@@ -49,13 +54,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signOut(auth).catch(() => {});
       }
     }, 60_000);
+
     return () => clearInterval(interval);
   }, [user, auth]);
 
-  const profileRef = useMemo(() => {
+  // useMemoFirebase ensures the ref is stable and satisfies useDoc's memoization requirement
+  const profileRef = useMemoFirebase(() => {
     if (!user || !db) return null;
     return doc(db, 'users', user.uid);
-  }, [db, user]);
+  }, [db, user?.uid]);
 
   const { data: profile, isLoading: profileLoading } = useDoc<UserProfile>(profileRef);
   const loading = userLoading || (!!user && profileLoading);

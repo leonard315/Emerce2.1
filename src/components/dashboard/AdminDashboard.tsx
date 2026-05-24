@@ -190,6 +190,8 @@ export function AdminDashboard() {
   const [demoMode, setDemoMode] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deletingUser, setDeletingUser] = useState(false);
+  const [userSearch, setUserSearch] = useState('');
+  const [alertFilter, setAlertFilter] = useState<'all' | 'fire' | 'crime' | 'medical' | 'pending' | 'resolved'>('all');
   const { toast } = useToast();
 
   // ── Alert sound + push notifications ─────────────────────────────────────
@@ -208,7 +210,7 @@ export function AdminDashboard() {
 
   const usersQuery = useMemoFirebase(() => {
     if (!db) return null;
-    return query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(20));
+    return query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(100));
   }, [db]);
 
   const feedbackQuery = useMemoFirebase(() => {
@@ -673,7 +675,7 @@ export function AdminDashboard() {
           {/* ── Alerts view ──────────────────────────────────────────────── */}
           {currentView === "alerts" && (
             <div className="space-y-4 w-full">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-3">
                 <h1 className="text-2xl font-black text-white">Manage Alerts</h1>
                 <Button
                   variant="outline"
@@ -700,10 +702,39 @@ export function AdminDashboard() {
                   <Trash2 className="h-3.5 w-3.5" /> Clear Resolved
                 </Button>
               </div>
+              {/* Filter tabs */}
+              <div className="flex flex-wrap gap-2">
+                {(['all', 'pending', 'fire', 'crime', 'medical', 'resolved'] as const).map(f => (
+                  <button
+                    key={f}
+                    onClick={() => setAlertFilter(f)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-xl text-xs font-bold transition-colors capitalize",
+                      alertFilter === f
+                        ? 'bg-red-600 text-white'
+                        : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
+                    )}
+                  >
+                    {f === 'fire' ? 'DRRM' : f === 'crime' ? 'Security' : f === 'medical' ? 'Clinic' : f.charAt(0).toUpperCase() + f.slice(1)}
+                    {' '}
+                    <span className="opacity-60">
+                      ({f === 'all' ? alerts.length :
+                        f === 'pending' ? alerts.filter(a => a.status === 'pending').length :
+                        f === 'resolved' ? alerts.filter(a => a.status === 'resolved').length :
+                        alerts.filter(a => a.type === f).length})
+                    </span>
+                  </button>
+                ))}
+              </div>
               <Card className="bg-slate-900/60 border-white/5 rounded-2xl overflow-hidden w-full">
                 {/* Mobile card list */}
                 <div className="md:hidden divide-y divide-white/5">
-                  {alerts.map((alert) => (
+                  {alerts.filter(a =>
+                    alertFilter === 'all' ? true :
+                    alertFilter === 'pending' ? a.status === 'pending' :
+                    alertFilter === 'resolved' ? a.status === 'resolved' :
+                    a.type === alertFilter
+                  ).map((alert) => (
                     <div key={alert.id} className="flex items-center gap-3 px-4 py-3">
                       <div className={cn(
                         "h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0",
@@ -745,7 +776,12 @@ export function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {alerts.map((alert) => (
+                    {alerts.filter(a =>
+                      alertFilter === 'all' ? true :
+                      alertFilter === 'pending' ? a.status === 'pending' :
+                      alertFilter === 'resolved' ? a.status === 'resolved' :
+                      a.type === alertFilter
+                    ).map((alert) => (
                       <TableRow key={alert.id} className="border-white/5 hover:bg-white/5">
                         <TableCell className="px-6 py-4">
                           <div className="flex items-center gap-2">
@@ -785,11 +821,21 @@ export function AdminDashboard() {
           {/* ── Users view ───────────────────────────────────────────────── */}
           {currentView === "users" && (
             <div className="space-y-4 w-full">
-              <h1 className="text-2xl font-black text-white">Manage Users</h1>
+              <div className="flex items-center justify-between gap-4">
+                <h1 className="text-2xl font-black text-white">Manage Users</h1>
+                <span className="text-xs text-slate-500">{users.length} total</span>
+              </div>
+              {/* Search */}
+              <Input
+                placeholder="Search by name or email..."
+                value={userSearch}
+                onChange={e => setUserSearch(e.target.value)}
+                className="bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500 rounded-xl h-10 max-w-sm"
+              />
               <Card className="bg-slate-900/60 border-white/5 rounded-2xl overflow-hidden w-full">
                 {/* Mobile card list (hidden on md+) */}
                 <div className="md:hidden divide-y divide-white/5">
-                  {users.map((user) => (
+                  {users.filter(u => !userSearch || u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.email.toLowerCase().includes(userSearch.toLowerCase())).map((user) => (
                     <div key={user.uid} className="flex items-center gap-3 px-4 py-3">
                       <div className="h-9 w-9 rounded-xl bg-slate-700 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                         {user.name.charAt(0).toUpperCase()}
@@ -828,7 +874,7 @@ export function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map((user) => (
+                    {users.filter(u => !userSearch || u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.email.toLowerCase().includes(userSearch.toLowerCase())).map((user) => (
                       <TableRow key={user.uid} className="border-white/5 hover:bg-white/5">
                         <TableCell className="px-6 py-3">
                           <div className="flex items-center gap-3">
@@ -943,6 +989,21 @@ export function AdminDashboard() {
           {currentView === "feedback" && (
             <div className="space-y-4 w-full">
               <h1 className="text-2xl font-black text-white">Feedback & Ratings</h1>
+              {/* Summary stats */}
+              {feedbacks.length > 0 && (
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: 'Avg Ease of Use', value: (feedbacks.reduce((s: number, f: any) => s + (f.easeOfUse || 0), 0) / feedbacks.length).toFixed(1) },
+                    { label: 'Avg Reliability', value: (feedbacks.reduce((s: number, f: any) => s + (f.reliability || 0), 0) / feedbacks.length).toFixed(1) },
+                    { label: 'Avg Satisfaction', value: (feedbacks.reduce((s: number, f: any) => s + (f.satisfaction || 0), 0) / feedbacks.length).toFixed(1) },
+                  ].map(stat => (
+                    <div key={stat.label} className="rounded-2xl border border-white/5 bg-slate-900/60 p-4">
+                      <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">{stat.label}</p>
+                      <p className="text-3xl font-black text-yellow-400 mt-1">{stat.value}<span className="text-sm text-slate-500">/5</span></p>
+                    </div>
+                  ))}
+                </div>
+              )}
               <Card className="bg-slate-900/60 border-white/5 rounded-2xl overflow-hidden w-full">
                 <Table className="w-full">
                   <TableHeader className="bg-white/5">
@@ -950,6 +1011,7 @@ export function AdminDashboard() {
                       <TableHead className="text-xs font-bold text-slate-500 uppercase tracking-widest px-6">User</TableHead>
                       <TableHead className="text-xs font-bold text-slate-500 uppercase tracking-widest">Ease of Use</TableHead>
                       <TableHead className="text-xs font-bold text-slate-500 uppercase tracking-widest">Reliability</TableHead>
+                      <TableHead className="text-xs font-bold text-slate-500 uppercase tracking-widest">Satisfaction</TableHead>
                       <TableHead className="text-xs font-bold text-slate-500 uppercase tracking-widest">Comments</TableHead>
                       <TableHead className="text-xs font-bold text-slate-500 uppercase tracking-widest text-right px-6">Date</TableHead>
                     </TableRow>
@@ -957,7 +1019,7 @@ export function AdminDashboard() {
                   <TableBody>
                     {feedbacks.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center text-slate-500 py-12 text-sm">
+                        <TableCell colSpan={6} className="text-center text-slate-500 py-12 text-sm">
                           No feedback submissions yet
                         </TableCell>
                       </TableRow>
@@ -987,6 +1049,17 @@ export function AdminDashboard() {
                                 />
                               ))}
                               <span className="text-xs text-slate-400 ml-1">{fb.reliability}/5</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={cn("h-3.5 w-3.5", i < (fb.satisfaction || 0) ? 'text-yellow-400 fill-yellow-400' : 'text-slate-600')}
+                                />
+                              ))}
+                              <span className="text-xs text-slate-400 ml-1">{fb.satisfaction ?? '—'}/5</span>
                             </div>
                           </TableCell>
                           <TableCell className="text-slate-400 text-sm max-w-xs truncate">

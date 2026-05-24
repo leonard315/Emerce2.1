@@ -11,14 +11,14 @@ import { FireDashboard } from '@/components/dashboard/FireDashboard';
 import { PoliceDashboard } from '@/components/dashboard/PoliceDashboard';
 import { MedicalDashboard } from '@/components/dashboard/MedicalDashboard';
 import { Loader2 } from 'lucide-react';
-import { useAuth as useFirebase } from '@/firebase';
+import { useAuth as useFirebaseHooks } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { signOut } from 'firebase/auth';
 import { clearLoginTimestamp } from '@/firebase';
 
 export default function DashboardPage() {
   const { user, profile, loading } = useAuth();
-  const auth = useFirebase();
+  const auth = useFirebaseHooks();
   const router = useRouter();
   const { toast } = useToast();
 

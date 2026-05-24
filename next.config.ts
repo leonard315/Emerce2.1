@@ -13,6 +13,8 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig: NextConfig = {
+  // NOTE: Keep ignoreBuildErrors true while the codebase has known TS issues.
+  // Remove once all type errors are resolved.
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -39,7 +41,26 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
+  },
+  // Security headers
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        ],
+      },
+    ];
   },
 };
 

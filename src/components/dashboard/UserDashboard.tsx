@@ -160,6 +160,7 @@ export function UserDashboard() {
 
   const [easeOfUse, setEaseOfUse] = useState([3]);
   const [reliability, setReliability] = useState([3]);
+  const [satisfaction, setSatisfaction] = useState([3]);
   const [comments, setComments] = useState("");
 
   const alertsQuery = useMemoFirebase(() => {
@@ -377,6 +378,7 @@ export function UserDashboard() {
       userId: profile.uid,
       easeOfUse: easeOfUse[0],
       reliability: reliability[0],
+      satisfaction: satisfaction[0],
       comments,
       timestamp: firestoreTimestamp(),
     };
@@ -385,8 +387,12 @@ export function UserDashboard() {
     batch.set(doc(db, 'users', profile.uid, 'questionnaire_responses', feedbackId), feedbackData);
     batch.set(doc(db, 'all_questionnaire_responses', feedbackId), feedbackData);
     await batch.commit();
-    toast({ title: "Feedback Received" });
+    toast({ title: "Feedback Received", description: "Thank you for your response!" });
     setFeedbackOpen(false);
+    setEaseOfUse([3]);
+    setReliability([3]);
+    setSatisfaction([3]);
+    setComments('');
   };
 
   const emergencyButtons = [
@@ -984,16 +990,23 @@ export function UserDashboard() {
                         </DialogHeader>
                         <div className="space-y-5 py-3">
                           <div className="space-y-2">
-                            <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Ease of Use</Label>
+                            <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Ease of Use (1–5)</Label>
                             <Slider value={easeOfUse} onValueChange={setEaseOfUse} max={5} min={1} step={1} className="py-2" />
+                            <p className="text-right text-xs text-white font-bold">{easeOfUse[0]}/5</p>
                           </div>
                           <div className="space-y-2">
-                            <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Reliability</Label>
+                            <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Reliability (1–5)</Label>
                             <Slider value={reliability} onValueChange={setReliability} max={5} min={1} step={1} className="py-2" />
+                            <p className="text-right text-xs text-white font-bold">{reliability[0]}/5</p>
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Overall Satisfaction (1–5)</Label>
+                            <Slider value={satisfaction} onValueChange={setSatisfaction} max={5} min={1} step={1} className="py-2" />
+                            <p className="text-right text-xs text-white font-bold">{satisfaction[0]}/5</p>
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Comments</Label>
-                            <Textarea value={comments} onChange={(e) => setComments(e.target.value)} className="bg-slate-900 border-white/10 rounded-xl h-24 resize-none" />
+                            <Textarea value={comments} onChange={(e) => setComments(e.target.value)} className="bg-slate-900 border-white/10 rounded-xl h-24 resize-none" placeholder="Share your experience..." />
                           </div>
                         </div>
                         <DialogFooter>
@@ -1384,6 +1397,15 @@ export function UserDashboard() {
                       <span>1 - Unreliable</span>
                       <span className="text-white font-bold">{reliability[0]}/5</span>
                       <span>5 - Very Reliable</span>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Overall Satisfaction (1–5)</Label>
+                    <Slider value={satisfaction} onValueChange={setSatisfaction} max={5} min={1} step={1} className="py-2" />
+                    <div className="flex justify-between text-xs text-slate-500">
+                      <span>1 - Very Unsatisfied</span>
+                      <span className="text-white font-bold">{satisfaction[0]}/5</span>
+                      <span>5 - Very Satisfied</span>
                     </div>
                   </div>
                   <div className="space-y-3">
