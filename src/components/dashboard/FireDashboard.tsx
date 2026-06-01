@@ -84,7 +84,7 @@ export function FireDashboard() {
       console.error('[FireDashboard] RTDB permission error:', error.code, error.message);
     });
 
-    // Polling fallback every 5s â€” catches cases where onValue is blocked
+    // Polling fallback every 5s "” catches cases where onValue is blocked
     const poll = setInterval(async () => {
       try {
         const snap = await get(callRef);
@@ -96,7 +96,7 @@ export function FireDashboard() {
             );
           }
         }
-      } catch { /* permission denied â€” rules need updating */ }
+      } catch { /* permission denied "” rules need updating */ }
     }, 5000);
 
     return () => { off(callRef); clearInterval(poll); };
@@ -147,7 +147,7 @@ export function FireDashboard() {
       playNewIncident('fire');
       playSiren('fire');
       setTimeout(() => stopSiren(), 8000);
-      // Push notification â€” works even when tab is in background
+      // Push notification "” works even when tab is in background
       const newest = alerts.find(a => a.status === 'pending');
       showNotification('ðŸ”¥ New DRRM Emergency Alert', {
         body: newest ? `${newest.userName} reported a fire/disaster emergency${newest.exactAddress ? ` at ${newest.exactAddress}` : ''}` : 'A new fire emergency has been reported.',
@@ -238,7 +238,7 @@ export function FireDashboard() {
     try {
       const alertData = { status: 'false_report' as AlertStatus, falseReportBy: profile.name, falseReportTime: firestoreTimestamp() };
 
-      // Commit alert status FIRST â€” before any async reads â€” so the listener
+      // Commit alert status FIRST "” before any async reads "” so the listener
       // immediately gets false_report and the UI stops reverting to responding.
       const statusBatch = writeBatch(db);
       statusBatch.set(doc(db, 'agency_alerts_fire', alert.id), alertData, { merge: true });
@@ -246,7 +246,7 @@ export function FireDashboard() {
       statusBatch.set(doc(db, 'all_alerts', alert.id), alertData, { merge: true });
       await statusBatch.commit();
 
-      // Now do the user penalty (getDoc is safe here â€” alert is already false_report)
+      // Now do the user penalty (getDoc is safe here "” alert is already false_report)
       const userRef = doc(db, 'users', alert.userId);
       const userSnap = await getDoc(userRef);
       const current = userSnap.data()?.falseReportCount || 0;
@@ -331,8 +331,8 @@ export function FireDashboard() {
                 </div>
                 <div>
                   <h1 className="text-2xl font-black text-white tracking-tight">DRRM Dashboard</h1>
-                  <p className="text-xs text-slate-400 mt-0.5">Disaster Risk Reduction â€” Real-time incident management</p>
-                  {!rtdb && <p className="text-xs text-red-400 font-bold mt-0.5">âš  Realtime DB not connected â€” video calls disabled</p>}
+                  <p className="text-xs text-slate-400 mt-0.5">Disaster Risk Reduction "” Real-time incident management</p>
+                  {!rtdb && <p className="text-xs text-red-400 font-bold mt-0.5">âš  Realtime DB not connected "” video calls disabled</p>}
                 </div>
               </div>
               <AlertSoundButton
@@ -482,7 +482,7 @@ export function FireDashboard() {
                               <div className="flex items-center gap-2 text-xs">
                                 <span className="h-1.5 w-1.5 rounded-full bg-yellow-400 flex-shrink-0" />
                                 <span className="text-slate-400">Reported:</span>
-                                <span className="text-white font-semibold">{alert.timestamp?.seconds ? format(alert.timestamp.toDate(), 'MMM d, h:mm a') : 'â€”'}</span>
+                                <span className="text-white font-semibold">{alert.timestamp?.seconds ? format(alert.timestamp.toDate(), 'MMM d, h:mm a') : '"”'}</span>
                               </div>
                               {alert.responseStartTime?.seconds && (
                                 <div className="flex items-center gap-2 text-xs">
@@ -630,7 +630,7 @@ export function FireDashboard() {
                 )}
               </div>
 
-              {/* Right panel â€” live map + stats */}
+              {/* Right panel "” live map + stats */}
               <div className="space-y-4">
 
                 {/* Sector Vector Grid */}
@@ -724,7 +724,7 @@ export function FireDashboard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* â”€â”€ Video Call â€” auto-shows when incoming call arrives â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* â”€â”€ Video Call "” auto-shows when incoming call arrives â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {(incomingAgencyCall || callActive) && (
         <VideoCall
           onClose={() => { stopRing(); setIncomingAgencyCall(null); setCallActive(false); }}

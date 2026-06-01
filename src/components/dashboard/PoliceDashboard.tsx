@@ -233,7 +233,7 @@ export function PoliceDashboard() {
     try {
       const alertData = { status: 'false_report' as AlertStatus, falseReportBy: profile.name, falseReportTime: firestoreTimestamp() };
 
-      // Commit alert status FIRST â€” before any async reads â€” so the listener
+      // Commit alert status FIRST "” before any async reads "” so the listener
       // immediately gets false_report and the UI stops reverting to responding.
       const statusBatch = writeBatch(db);
       statusBatch.set(doc(db, 'agency_alerts_police', alert.id), alertData, { merge: true });
@@ -241,7 +241,7 @@ export function PoliceDashboard() {
       statusBatch.set(doc(db, 'all_alerts', alert.id), alertData, { merge: true });
       await statusBatch.commit();
 
-      // Now do the user penalty (getDoc is safe here â€” alert is already false_report)
+      // Now do the user penalty (getDoc is safe here "” alert is already false_report)
       const userRef = doc(db, 'users', alert.userId);
       const userSnap = await getDoc(userRef);
       const current = userSnap.data()?.falseReportCount || 0;
@@ -322,7 +322,7 @@ export function PoliceDashboard() {
                 </div>
                 <div>
                   <h1 className="text-2xl font-black text-white tracking-tight">Security Dashboard</h1>
-                  <p className="text-xs text-slate-400 mt-0.5">School Security Department â€” Real-time incident management</p>
+                  <p className="text-xs text-slate-400 mt-0.5">School Security Department "” Real-time incident management</p>
                 </div>
               </div>
               <AlertSoundButton
@@ -607,7 +607,7 @@ export function PoliceDashboard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* â”€â”€ Video Call â€” auto-shows when incoming call arrives â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* â”€â”€ Video Call "” auto-shows when incoming call arrives â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {(incomingAgencyCall || callActive) && (
         <VideoCall
           onClose={() => { stopRing(); setIncomingAgencyCall(null); }}
