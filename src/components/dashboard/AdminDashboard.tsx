@@ -64,6 +64,53 @@ import Link from 'next/link';
 // Dynamic map — loaded as a fully isolated client component to avoid Leaflet SSR issues
 const AdminLiveMap = dynamic(() => import('./AdminLiveMap'), { ssr: false });
 
+// ─── Logs View ────────────────────────────────────────────────────────────────
+function LogsView({ db }: { db: any }) {
+  const logsQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'security_logs'), orderBy('timestamp', 'desc'), limit(100));
+  }, [db]);
+  const { data: logsData, isLoading } = useCollection<any>(logsQuery);
+  const logs = logsData || [];
+
+  return (
+    <div className="space-y-4 w-full">
+      <h1 className="text-2xl font-black text-white">System Logs</h1>
+      <Card className="bg-slate-900/60 border-white/5 rounded-2xl overflow-hidden">
+        <Table className="w-full">
+          <TableHeader className="bg-white/5">
+            <TableRow className="border-white/5 hover:bg-transparent">
+              <TableHead className="text-xs font-bold text-slate-500 uppercase tracking-widest px-6">Event</TableHead>
+              <TableHead className="text-xs font-bold text-slate-500 uppercase tracking-widest">User</TableHead>
+              <TableHead className="text-xs font-bold text-slate-500 uppercase tracking-widest text-right px-6">Time</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow><TableCell colSpan={3} className="text-center py-12"><Loader2 className="h-5 w-5 animate-spin text-slate-500 mx-auto" /></TableCell></TableRow>
+            ) : logs.length === 0 ? (
+              <TableRow><TableCell colSpan={3} className="text-center text-slate-500 py-12 text-sm">No logs yet</TableCell></TableRow>
+            ) : logs.map((log: any) => (
+              <TableRow key={log.id} className="border-white/5 hover:bg-white/5">
+                <TableCell className="px-6 py-3">
+                  <div className="flex items-center gap-2">
+                    <Activity className="h-3.5 w-3.5 text-slate-500 flex-shrink-0" />
+                    <span className="text-sm text-white font-medium">{log.event || log.action || '—'}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-slate-400 text-sm">{log.email || log.uid?.slice(0, 8) || '—'}</TableCell>
+                <TableCell className="text-right px-6 text-slate-500 text-xs">
+                  {log.timestamp?.seconds ? format(log.timestamp.toDate(), 'MMM d, HH:mm:ss') : '—'}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Card>
+    </div>
+  );
+}
+
 // ─── Admin Profile View ───────────────────────────────────────────────────────
 function AdminProfileView({ profile, db }: { profile: any; db: any }) {
   const { toast } = useToast();
@@ -277,6 +324,18 @@ export function AdminDashboard() {
 
   const activeAlerts = alerts.filter(a => a.location && a.status !== 'resolved');
 
+  // Calculate real average response time from resolved alerts
+  const avgResponseMinutes = useMemo(() => {
+    const resolved = alerts.filter(a => a.responseStartTime?.seconds && a.timestamp?.seconds);
+    if (resolved.length === 0) return null;
+    const total = resolved.reduce((sum, a) => {
+      return sum + (a.responseStartTime.seconds - a.timestamp.seconds);
+    }, 0);
+    const avgSeconds = total / resolved.length;
+    if (avgSeconds < 60) return `${Math.round(avgSeconds)}s`;
+    return `${Math.round(avgSeconds / 60)}m`;
+  }, [alerts]);
+
   const handleViewUser = (user: UserProfile) => {
     setSelectedUser(user);
     setEditRole(user.role);
@@ -474,7 +533,7 @@ export function AdminDashboard() {
               <div className="flex items-center justify-between py-2 px-4 rounded-xl bg-slate-900/50 border border-white/5">
                 <div className="flex items-center gap-2 text-xs text-slate-400">
                   <Clock className="h-3.5 w-3.5" />
-                  <span>Avg response: <span className="text-white font-bold">2 min</span></span>
+                  <span>Avg response: <span className="text-white font-bold">{avgResponseMinutes ?? '—'}</span></span>
                 </div>
                 <Button variant="ghost" size="sm" className="h-7 text-xs text-green-400 hover:text-green-300 gap-1.5"
                   onClick={() => {
@@ -984,6 +1043,11 @@ export function AdminDashboard() {
 
           {/* ── Settings view ────────────────────────────────────────────── */}
           {currentView === "settings" && <AdminSettings />}
+
+          {/* ── Logs view ────────────────────────────────────────────────── */}
+          {currentView === "logs" && (
+            <LogsView db={db} />
+          )}
 
           {/* ── Feedback view ────────────────────────────────────────────── */}
           {currentView === "feedback" && (

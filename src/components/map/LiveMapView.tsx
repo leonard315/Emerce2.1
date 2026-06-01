@@ -110,9 +110,12 @@ export function LiveMapView() {
   const alertsQuery = useMemoFirebase(() => {
     if (!db) return null;
     const roleCollectionMap: Record<string, string> = {
-      fire: 'agency_alerts_fire',
-      police: 'agency_alerts_police',
-      medical: 'agency_alerts_medical',
+      fire:     'agency_alerts_fire',
+      drrm:     'agency_alerts_fire',
+      police:   'agency_alerts_police',
+      security: 'agency_alerts_police',
+      medical:  'agency_alerts_medical',
+      clinic:   'agency_alerts_medical',
     };
     const col = profile?.role && roleCollectionMap[profile.role]
       ? roleCollectionMap[profile.role]

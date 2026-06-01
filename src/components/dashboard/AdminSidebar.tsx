@@ -13,6 +13,7 @@ import {
   LogOut,
   Settings,
   Star,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from 'firebase/auth';
@@ -62,6 +63,7 @@ export function AdminSidebar({ currentView, onViewChange }: AdminSidebarProps) {
       { title: "Alert History", view: "history", icon: ClipboardList },
       { title: "Live Map", view: "map", icon: Map, href: "/map" },
       { title: "Feedback & Ratings", view: "feedback", icon: Star },
+      { title: "System Logs", view: "logs", icon: Activity },
       { title: "My Profile", view: "profile", icon: UserCircle },
       { title: "Settings", view: "settings", icon: Settings },
     ],

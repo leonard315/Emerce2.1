@@ -52,18 +52,14 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* DashboardHeader only for roles that don't have their own sidebar */}
-      {profile.role !== 'admin' && profile.role !== 'user' && profile.role !== 'fire' && profile.role !== 'police' && profile.role !== 'medical' && profile.role !== 'security' && profile.role !== 'drrm' && profile.role !== 'clinic' && <DashboardHeader />}
+      {/* DashboardHeader only for roles that have their own sidebar */}
+      {!['admin', 'user', 'school_user', 'fire', 'drrm', 'police', 'security', 'medical', 'clinic'].includes(profile.role) && <DashboardHeader />}
       <main className="flex-1">
         {(profile.role === 'user' || profile.role === 'school_user') && <UserDashboard />}
-        {profile.role === 'fire' && <FireDashboard />}
-        {profile.role === 'police' && <PoliceDashboard />}
-        {profile.role === 'medical' && <MedicalDashboard />}
+        {(profile.role === 'fire' || profile.role === 'drrm') && <FireDashboard />}
+        {(profile.role === 'police' || profile.role === 'security') && <PoliceDashboard />}
+        {(profile.role === 'medical' || profile.role === 'clinic') && <MedicalDashboard />}
         {profile.role === 'admin' && <AdminDashboard />}
-        {/* School roles map to agency dashboards */}
-        {profile.role === 'security' && <PoliceDashboard />}
-        {profile.role === 'drrm' && <FireDashboard />}
-        {profile.role === 'clinic' && <MedicalDashboard />}
       </main>
     </div>
   );
