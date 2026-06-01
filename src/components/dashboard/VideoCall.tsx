@@ -103,7 +103,18 @@ export function VideoCall({
     return () => { if (durT.current) clearInterval(durT.current); };
   }, [cs]);
 
-  // ── Controls auto-hide (4s) ───────────────────────────────────────────────
+  // Re-attach local stream when switching screens (calling -> connected)
+  useEffect(() => {
+    if (cs === 'connected' && locRef.current && locStream.current) {
+      locRef.current.srcObject = locStream.current;
+      locRef.current.muted = true;
+    }
+    if (cs === 'connected' && remRef.current && remStream.current.getTracks().length > 0) {
+      remRef.current.srcObject = remStream.current;
+      remRef.current.muted = !spkOn;
+      remRef.current.play().catch(() => {});
+    }
+  }, [cs, spkOn]);
   const showControls = useCallback(() => {
     setShowCtrl(true);
     if (ctrlT.current) clearTimeout(ctrlT.current);
@@ -410,16 +421,24 @@ export function VideoCall({
 
   // ── Controls ──────────────────────────────────────────────────────────────
   const toggleMic = () => {
-    const tracks = locStream.current?.getAudioTracks() ?? [];
     const next = !micOn;
-    tracks.forEach(t => { t.enabled = next; });
+    // Toggle local stream tracks
+    locStream.current?.getAudioTracks().forEach(t => { t.enabled = next; });
+    // Also update the sender so remote side knows mic is muted
+    pcRef.current?.getSenders().forEach(s => {
+      if (s.track?.kind === 'audio') s.track.enabled = next;
+    });
     setMicOn(next);
   };
 
   const toggleCam = () => {
-    const tracks = locStream.current?.getVideoTracks() ?? [];
     const next = !camOn;
-    tracks.forEach(t => { t.enabled = next; });
+    // Toggle local stream tracks
+    locStream.current?.getVideoTracks().forEach(t => { t.enabled = next; });
+    // Also update the sender
+    pcRef.current?.getSenders().forEach(s => {
+      if (s.track?.kind === 'video') s.track.enabled = next;
+    });
     setCamOn(next);
   };
 
