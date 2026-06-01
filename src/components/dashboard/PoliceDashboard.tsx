@@ -121,15 +121,15 @@ export function PoliceDashboard() {
   useFCMToken(profile?.uid);
   const { startRing, stopRing } = useRingtone();
 
-  // Play ringtone when incoming call arrives
+  // Play ringtone when incoming, stop immediately when answered or dismissed
   useEffect(() => {
-    if (incomingAgencyCall) {
+    if (incomingAgencyCall && !callActive) {
       startRing();
     } else {
       stopRing();
     }
     return () => stopRing();
-  }, [incomingAgencyCall, startRing, stopRing]);
+  }, [incomingAgencyCall, callActive, startRing, stopRing]);
   const prevCountRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -610,7 +610,8 @@ export function PoliceDashboard() {
       {/* â”€â”€ Video Call "” auto-shows when incoming call arrives â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {(incomingAgencyCall || callActive) && (
         <VideoCall
-          onClose={() => { stopRing(); setIncomingAgencyCall(null); }}
+          onClose={() => { stopRing(); setIncomingAgencyCall(null); setCallActive(false); }}
+          onAnswer={() => { stopRing(); setCallActive(true); }}
           incomingRoomId={incomingAgencyCall?.roomId}
           incomingCallerNameProp={incomingAgencyCall?.callerName}
         />

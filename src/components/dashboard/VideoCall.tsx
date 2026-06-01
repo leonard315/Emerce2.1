@@ -25,6 +25,7 @@ const ICE: RTCConfiguration = {
 
 export interface VideoCallProps {
   onClose: () => void;
+  onAnswer?: () => void;
   targetUserId?: string;
   targetUserName?: string;
   alertType?: 'fire' | 'crime' | 'medical' | 'all';
@@ -48,7 +49,7 @@ function Av({ name, lg }: { name: string; lg?: boolean }) {
 }
 
 export function VideoCall({
-  onClose, targetUserId, targetUserName, alertType,
+  onClose, onAnswer, targetUserId, targetUserName, alertType,
   incomingRoomId, incomingCallerNameProp,
 }: VideoCallProps) {
   const rtdb = useDatabase();
@@ -307,6 +308,7 @@ export function VideoCall({
   const answerCall = useCallback(async () => {
     if (!rtdb || !profile) return;
     stopRingtone();
+    onAnswer?.(); // notify dashboard immediately so it stops its ringtone
     setErr(null); setCs('connecting');
     let roomId = incomingRoomId ?? roomRef.current;
     if (!roomId) {
