@@ -62,6 +62,7 @@ export function FireDashboard() {
   const [currentView, setCurrentView] = useState("dashboard");
   const [falseReportConfirm, setFalseReportConfirm] = useState<EmergencyAlert | null>(null);
   const [incomingAgencyCall, setIncomingAgencyCall] = useState<{roomId: string; callerName: string} | null>(null);
+  const [callActive, setCallActive] = useState(false);
 
   // â”€â”€ Listen for incoming video calls from users â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
@@ -74,9 +75,10 @@ export function FireDashboard() {
         const data = snap.val();
         if (Date.now() - data.createdAt < 60000) {
           setIncomingAgencyCall({ roomId: data.roomId, callerName: data.callerName });
+          setCallActive(true);
         }
       } else {
-        setIncomingAgencyCall(null);
+        // Keep call data alive — VideoCall manages its own lifecycle after answering
       }
     }, (error: any) => {
       console.error('[FireDashboard] RTDB permission error:', error.code, error.message);
@@ -723,11 +725,11 @@ export function FireDashboard() {
       </AlertDialog>
 
       {/* â”€â”€ Video Call â€” auto-shows when incoming call arrives â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      {incomingAgencyCall && (
+      {(incomingAgencyCall || callActive) && (
         <VideoCall
-          onClose={() => { stopRing(); setIncomingAgencyCall(null); }}
-          incomingRoomId={incomingAgencyCall.roomId}
-          incomingCallerNameProp={incomingAgencyCall.callerName}
+          onClose={() => { stopRing(); setIncomingAgencyCall(null); setCallActive(false); }}
+          incomingRoomId={incomingAgencyCall?.roomId}
+          incomingCallerNameProp={incomingAgencyCall?.callerName}
         />
       )}
     </SidebarProvider>

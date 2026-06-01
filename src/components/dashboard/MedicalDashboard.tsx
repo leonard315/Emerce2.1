@@ -56,6 +56,7 @@ export function MedicalDashboard() {
   const [currentView, setCurrentView] = useState("dashboard");
   const [falseReportConfirm, setFalseReportConfirm] = useState<EmergencyAlert | null>(null);
   const [incomingAgencyCall, setIncomingAgencyCall] = useState<{roomId: string; callerName: string} | null>(null);
+  const [callActive, setCallActive] = useState(false);
 
   // â”€â”€ Listen for incoming video calls from users â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
@@ -68,9 +69,10 @@ export function MedicalDashboard() {
         const data = snap.val();
         if (Date.now() - data.createdAt < 60000) {
           setIncomingAgencyCall({ roomId: data.roomId, callerName: data.callerName });
+          setCallActive(true);
         }
       } else {
-        setIncomingAgencyCall(null);
+        // Keep call data alive after answering
       }
     }, (error: any) => {
       console.error('[MedicalDashboard] RTDB error:', error.code, error.message);
@@ -564,11 +566,11 @@ export function MedicalDashboard() {
       </AlertDialog>
 
       {/* â”€â”€ Video Call â€” auto-shows when incoming call arrives â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      {incomingAgencyCall && (
+      {(incomingAgencyCall || callActive) && (
         <VideoCall
           onClose={() => setIncomingAgencyCall(null)}
-          incomingRoomId={incomingAgencyCall.roomId}
-          incomingCallerNameProp={incomingAgencyCall.callerName}
+          incomingRoomId={incomingAgencyCall?.roomId}
+          incomingCallerNameProp={incomingAgencyCall?.callerName}
         />
       )}
     </SidebarProvider>
