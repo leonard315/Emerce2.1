@@ -112,20 +112,21 @@ export function VideoCall({ onClose, targetUserId, targetUserName, alertType, in
     return ()=>document.removeEventListener('fullscreenchange',h);
   },[]);
 
-  // Ringtone
+  // Ringtone — stop immediately when cs leaves 'incoming'
   const stopRing = useCallback(()=>{
     ringStopped.current=true;
-    ringCtx.current?.close().catch(()=>{});
+    try { ringCtx.current?.close(); } catch {}
     ringCtx.current=null;
   },[]);
 
   const startRing = useCallback(()=>{
+    stopRing(); // stop any existing ring first
+    ringStopped.current=false;
     try{
-      ringStopped.current=false;
       const ctx=new (window.AudioContext||(window as any).webkitAudioContext)();
       ringCtx.current=ctx;
       const play=(t:number)=>{
-        if(ringStopped.current)return;
+        if(ringStopped.current||!ringCtx.current)return;
         [440,480].forEach(f=>{
           const o=ctx.createOscillator(),g=ctx.createGain();
           o.type='sine'; o.frequency.value=f;
@@ -136,16 +137,17 @@ export function VideoCall({ onClose, targetUserId, targetUserName, alertType, in
           o.connect(g); g.connect(ctx.destination);
           o.start(t); o.stop(t+2.1);
         });
-        setTimeout(()=>play(ctx.currentTime),4000);
+        setTimeout(()=>{ if(!ringStopped.current) play(ctx.currentTime); },4000);
       };
       play(ctx.currentTime);
     }catch{}
-  },[]);
+  },[stopRing]);
 
   useEffect(()=>{
     if(cs==='incoming'){ startRing(); }
     else { stopRing(); }
     return ()=>stopRing();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[cs]);
 
   // Cleanup
@@ -499,7 +501,7 @@ export function VideoCall({ onClose, targetUserId, targetUserName, alertType, in
             <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/70 to-transparent pointer-events-none"/>
             <div className={cn('absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black/80 to-transparent pointer-events-none transition-opacity duration-300',ctrl?'opacity-100':'opacity-0')}/>
             {/* Top bar */}
-            <div className={cn('absolute top-0 inset-x-0 flex items-center justify-between px-4 pt-4 pb-3 transition-all duration-300',ctrl?'opacity-100 translate-y-0':'opacity-0 -translate-y-2 pointer-events-none')}>
+            <div className={cn('absolute top-0 inset-x-0 flex items-center justify-between px-4 pt-4 pb-3 transition-all duration-300',ctrl?'opacity-100 translate-y-0':'opacity-0 -translate-y-2')}>
               <div className="flex items-center gap-3 min-w-0">
                 <Av name={dn}/>
                 <div className="min-w-0">
@@ -522,8 +524,9 @@ export function VideoCall({ onClose, targetUserId, targetUserName, alertType, in
               {!cam && <div className="w-full h-full flex items-center justify-center bg-slate-800"><VideoOff className="h-6 w-6 text-slate-500"/></div>}
               <div className="absolute bottom-1 left-0 right-0 flex justify-center"><span className="text-[9px] text-white/60 font-bold bg-black/40 px-1.5 py-0.5 rounded-full">You</span></div>
             </div>
-            {/* Controls */}
-            <div className={cn('absolute bottom-0 inset-x-0 pb-8 pt-4 px-4 transition-all duration-300',ctrl?'opacity-100 translate-y-0':'opacity-0 translate-y-4 pointer-events-none')}>
+            {/* Controls — always pointer-events enabled so buttons work */}
+            <div className={cn('absolute bottom-0 inset-x-0 pb-8 pt-4 px-4 transition-all duration-300',ctrl?'opacity-100 translate-y-0':'opacity-0 translate-y-4')}
+              onMouseMove={resetCtrl} onTouchStart={resetCtrl}>
               {err && <div className="mb-4 px-4 py-2.5 rounded-xl bg-red-900/60 border border-red-500/40 backdrop-blur-sm"><p className="text-xs text-red-300 text-center">{err}</p></div>}
               <div className="flex items-center justify-center gap-3 sm:gap-4">
                 <div className="flex flex-col items-center gap-1.5">
