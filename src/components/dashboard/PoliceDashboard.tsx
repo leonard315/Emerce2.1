@@ -124,6 +124,7 @@ export function PoliceDashboard() {
     if (pending > prevCountRef.current) {
       playNewIncident('police');
       playSiren('police');
+      setTimeout(() => stopSiren(), 8000);
       const newest = alerts.find(a => a.status === 'pending');
       showNotification('🚔 New Security Emergency Alert', {
         body: newest ? `${newest.userName} reported a crime/security emergency${newest.exactAddress ? ` at ${newest.exactAddress}` : ''}` : 'A new crime emergency has been reported.',

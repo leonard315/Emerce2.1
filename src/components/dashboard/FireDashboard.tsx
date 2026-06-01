@@ -126,6 +126,7 @@ export function FireDashboard() {
     if (pending > prevCountRef.current) {
       playNewIncident('fire');
       playSiren('fire');
+      setTimeout(() => stopSiren(), 8000);
       // Push notification — works even when tab is in background
       const newest = alerts.find(a => a.status === 'pending');
       showNotification('🔥 New DRRM Emergency Alert', {

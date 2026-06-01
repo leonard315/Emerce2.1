@@ -286,8 +286,11 @@ export function AdminDashboard() {
     if (pending > prevPendingRef.current) {
       const newest = alerts.find(a => a.status === 'pending');
       const soundType = newest?.type === 'fire' ? 'fire' : newest?.type === 'crime' ? 'police' : newest?.type === 'medical' ? 'medical' : 'all';
+      // Play short alert beep only (no 60s siren for admin — just a 3-beep notification)
       playNewIncident(soundType);
+      // Auto-stop siren after 8 seconds
       playSiren(soundType);
+      setTimeout(() => stopSiren(), 8000);
       const typeLabel = newest?.type === 'fire' ? '🔥 DRRM' : newest?.type === 'crime' ? '🚔 Security' : '🚑 Clinic';
       showNotification(`${typeLabel} Emergency Alert`, {
         body: newest ? `${newest.userName} reported an emergency${(newest as any).exactAddress ? ` at ${(newest as any).exactAddress}` : ''}` : 'A new emergency has been reported.',

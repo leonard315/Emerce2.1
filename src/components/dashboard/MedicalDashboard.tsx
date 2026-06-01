@@ -119,6 +119,7 @@ export function MedicalDashboard() {
     if (pending > prevCountRef.current) {
       playNewIncident('medical');
       playSiren('medical');
+      setTimeout(() => stopSiren(), 8000);
       const newest = alerts.find(a => a.status === 'pending');
       showNotification('ðŸš‘ New Clinic Emergency Alert', {
         body: newest ? `${newest.userName} reported a medical emergency${newest.exactAddress ? ` at ${newest.exactAddress}` : ''}` : 'A new medical emergency has been reported.',
