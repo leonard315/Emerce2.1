@@ -65,8 +65,10 @@ export function FireDashboard() {
   // ── Listen for incoming video calls from users ────────────────────────────
   useEffect(() => {
     if (!rtdb) return;
+    console.log('[FireDashboard] Listening on agency_calls/drrm, rtdb:', !!rtdb);
     const callRef = ref(rtdb, 'agency_calls/drrm');
     const unsub = onValue(callRef, (snap) => {
+      console.log('[FireDashboard] agency_calls/drrm snapshot:', snap.exists(), snap.val());
       if (snap.exists()) {
         const data = snap.val();
         if (Date.now() - data.createdAt < 60000) {

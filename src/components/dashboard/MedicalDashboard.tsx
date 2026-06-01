@@ -59,8 +59,10 @@ export function MedicalDashboard() {
   // ── Listen for incoming video calls from users ────────────────────────────
   useEffect(() => {
     if (!rtdb) return;
+    console.log('[MedicalDashboard] Listening on agency_calls/clinic, rtdb:', !!rtdb);
     const callRef = ref(rtdb, 'agency_calls/clinic');
     const unsub = onValue(callRef, (snap) => {
+      console.log('[MedicalDashboard] agency_calls/clinic snapshot:', snap.exists(), snap.val());
       if (snap.exists()) {
         const data = snap.val();
         if (Date.now() - data.createdAt < 60000) {

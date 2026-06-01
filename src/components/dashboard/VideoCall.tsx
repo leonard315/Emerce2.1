@@ -222,6 +222,7 @@ export function VideoCall({ onClose, targetUserId, targetUserName, alertType, in
   // Broadcast call (user -> agency)
   const broadcastCall = useCallback(async(channel:string)=>{
     if(!rtdb||!profile)return;
+    console.log('[VideoCall] broadcastCall starting, channel:', channel, 'rtdb:', !!rtdb);
     setErr(null); setCs('calling');
     const s=await getMedia();
     if(!s){setCs('idle');return;}
@@ -232,7 +233,9 @@ export function VideoCall({ onClose, targetUserId, targetUserName, alertType, in
     const offer=await p.createOffer({offerToReceiveAudio:true,offerToReceiveVideo:true});
     await p.setLocalDescription(offer);
     await set(ref(rtdb,`calls/${roomId}`),{roomId,offer:{type:offer.type,sdp:offer.sdp},callerId:profile.uid,callerName:profile.name,callerRole:profile.role,createdAt:Date.now()});
+    console.log('[VideoCall] Written to calls/', roomId);
     await set(ref(rtdb,`agency_calls/${channel}`),{roomId,callerId:profile.uid,callerName:profile.name,createdAt:Date.now()});
+    console.log('[VideoCall] Written to agency_calls/', channel);
     const aRef=ref(rtdb,`calls/${roomId}/answer`);
     onValue(aRef,async snap=>{if(snap.exists()&&p.currentRemoteDescription===null)await p.setRemoteDescription(new RTCSessionDescription(snap.val())).catch(()=>{});});
     ansUnsub.current=()=>off(aRef);
@@ -292,12 +295,14 @@ export function VideoCall({ onClose, targetUserId, targetUserName, alertType, in
     return ()=>off(sigRef);
   },[rtdb,profile?.uid]);
 
-  // Auto-initiate on mount
+  // Auto-initiate on mount — wait for rtdb and profile to be ready
+  const hasInitiated = useRef(false);
   useEffect(()=>{
     if(!profile||!rtdb)return;
+    if(hasInitiated.current)return;
     if(incomingRoomId)return;
+    hasInitiated.current=true;
     if(targetUserId&&targetUserName){
-      // direct call
       (async()=>{
         setErr(null); setCs('calling');
         const s=await getMedia();
@@ -321,7 +326,7 @@ export function VideoCall({ onClose, targetUserId, targetUserName, alertType, in
       broadcastCall(agCh);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[]);
+  },[profile?.uid, rtdb]);
 
   // Unmount
   useEffect(()=>()=>{

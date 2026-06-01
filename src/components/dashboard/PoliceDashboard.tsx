@@ -64,8 +64,10 @@ export function PoliceDashboard() {
   // ── Listen for incoming video calls from users ────────────────────────────
   useEffect(() => {
     if (!rtdb) return;
+    console.log('[PoliceDashboard] Listening on agency_calls/security, rtdb:', !!rtdb);
     const callRef = ref(rtdb, 'agency_calls/security');
     const unsub = onValue(callRef, (snap) => {
+      console.log('[PoliceDashboard] agency_calls/security snapshot:', snap.exists(), snap.val());
       if (snap.exists()) {
         const data = snap.val();
         if (Date.now() - data.createdAt < 60000) {
