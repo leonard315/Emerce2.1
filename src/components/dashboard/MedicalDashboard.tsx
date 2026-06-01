@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from 'react';
 import { collection, query, orderBy, doc, writeBatch, serverTimestamp as firestoreTimestamp, getDoc, deleteDoc, increment, updateDoc } from 'firebase/firestore';
@@ -20,6 +20,7 @@ import { AlertSoundButton } from "./AlertSoundButton";
 import { useAlertSound } from "@/hooks/use-alert-sound";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { useFCMToken } from "@/hooks/use-fcm-token";
+import { useRingtone } from "@/hooks/use-ringtone";
 import { SectorVectorGrid } from "./SectorVectorGrid";
 import { DashboardHeader } from "./DashboardHeader";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -56,7 +57,7 @@ export function MedicalDashboard() {
   const [falseReportConfirm, setFalseReportConfirm] = useState<EmergencyAlert | null>(null);
   const [incomingAgencyCall, setIncomingAgencyCall] = useState<{roomId: string; callerName: string} | null>(null);
 
-  // ── Listen for incoming video calls from users ────────────────────────────
+  // â”€â”€ Listen for incoming video calls from users â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     if (!rtdb) return;
     console.log('[MedicalDashboard] Listening on agency_calls/clinic, rtdb:', !!rtdb);
@@ -94,7 +95,18 @@ export function MedicalDashboard() {
 
   const { soundEnabled, toggleSound, playNewIncident, playSiren, stopSiren, sirenActive } = useAlertSound();
   const { showNotification } = usePushNotifications();
-  useFCMToken(profile?.uid); // Register for background push notifications
+  useFCMToken(profile?.uid);
+  const { startRing, stopRing } = useRingtone();
+
+  // Play ringtone when incoming call arrives
+  useEffect(() => {
+    if (incomingAgencyCall) {
+      startRing();
+    } else {
+      stopRing();
+    }
+    return () => stopRing();
+  }, [incomingAgencyCall, startRing, stopRing]);
   const prevCountRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -108,7 +120,7 @@ export function MedicalDashboard() {
       playNewIncident('medical');
       playSiren('medical');
       const newest = alerts.find(a => a.status === 'pending');
-      showNotification('🚑 New Clinic Emergency Alert', {
+      showNotification('ðŸš‘ New Clinic Emergency Alert', {
         body: newest ? `${newest.userName} reported a medical emergency${newest.exactAddress ? ` at ${newest.exactAddress}` : ''}` : 'A new medical emergency has been reported.',
         tag: 'medical-alert',
         requireInteraction: true,
@@ -162,7 +174,7 @@ export function MedicalDashboard() {
 
       await batch.commit();
       toast({ title: `Alert marked as ${status}` });
-      if (rtdb) push(ref(rtdb, 'live-logs'), { action: `Medical: ${profile.name} → ${status}`, userName: profile.name, timestamp: rtdbTimestamp() });
+      if (rtdb) push(ref(rtdb, 'live-logs'), { action: `Medical: ${profile.name} â†’ ${status}`, userName: profile.name, timestamp: rtdbTimestamp() });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Failed to update status', description: e.message });
     }
@@ -178,7 +190,7 @@ export function MedicalDashboard() {
     try {
       const alertData = { status: 'false_report' as AlertStatus, falseReportBy: profile.name, falseReportTime: firestoreTimestamp() };
 
-      // Commit alert status FIRST — before any async reads — so the listener
+      // Commit alert status FIRST â€” before any async reads â€” so the listener
       // immediately gets false_report and the UI stops reverting to responding.
       const statusBatch = writeBatch(db);
       statusBatch.set(doc(db, 'agency_alerts_medical', alert.id), alertData, { merge: true });
@@ -186,7 +198,7 @@ export function MedicalDashboard() {
       statusBatch.set(doc(db, 'all_alerts', alert.id), alertData, { merge: true });
       await statusBatch.commit();
 
-      // Now do the user penalty (getDoc is safe here — alert is already false_report)
+      // Now do the user penalty (getDoc is safe here â€” alert is already false_report)
       const userRef = doc(db, 'users', alert.userId);
       const userSnap = await getDoc(userRef);
       const current = userSnap.data()?.falseReportCount || 0;
@@ -265,7 +277,7 @@ export function MedicalDashboard() {
                 </div>
                 <div>
                   <h1 className="text-2xl font-black text-white tracking-tight">Clinic Dashboard</h1>
-                  <p className="text-xs text-slate-400 mt-0.5">School Medical Office — Real-time incident management</p>
+                  <p className="text-xs text-slate-400 mt-0.5">School Medical Office â€” Real-time incident management</p>
                 </div>
               </div>
               <AlertSoundButton soundEnabled={soundEnabled} sirenActive={sirenActive} onToggleSound={toggleSound}
@@ -398,7 +410,7 @@ export function MedicalDashboard() {
                               const url = URL.createObjectURL(new Blob([u8], { type: mime }));
                               window.open(url, '_blank');
                             } else { window.open(photo, '_blank'); }
-                          }} className="text-[10px] font-bold text-red-400 hover:text-red-300 shrink-0 transition-colors">View →</button>
+                          }} className="text-[10px] font-bold text-red-400 hover:text-red-300 shrink-0 transition-colors">View â†’</button>
                         </div>
                       )}
                       {voice && (
@@ -452,7 +464,7 @@ export function MedicalDashboard() {
                   headerColor="bg-red-600"
                   activeAlerts={activeAlerts}
                   alertColor="#ef4444"
-                  agencyLabel="🚑 Medical Emergency"
+                  agencyLabel="ðŸš‘ Medical Emergency"
                   mapHref="/map"
                 />
 
@@ -505,7 +517,7 @@ export function MedicalDashboard() {
         )}
       </SidebarInset>
 
-      {/* ── False Report Confirmation Dialog ─────────────────────────────── */}
+      {/* â”€â”€ False Report Confirmation Dialog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <AlertDialog open={falseReportConfirm !== null} onOpenChange={(open) => { if (!open) setFalseReportConfirm(null); }}>
         <AlertDialogContent className="bg-slate-950 border-white/10 rounded-2xl">
           <AlertDialogHeader>
@@ -533,7 +545,7 @@ export function MedicalDashboard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* ── Video Call — auto-shows when incoming call arrives ───────────── */}
+      {/* â”€â”€ Video Call â€” auto-shows when incoming call arrives â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {incomingAgencyCall && (
         <VideoCall
           onClose={() => setIncomingAgencyCall(null)}

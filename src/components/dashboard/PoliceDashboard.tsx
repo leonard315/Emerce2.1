@@ -24,6 +24,7 @@ import { AlertSoundButton } from "./AlertSoundButton";
 import { useAlertSound } from "@/hooks/use-alert-sound";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { useFCMToken } from "@/hooks/use-fcm-token";
+import { useRingtone } from "@/hooks/use-ringtone";
 import { SectorVectorGrid } from "./SectorVectorGrid";
 import { DashboardHeader } from "./DashboardHeader";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -99,7 +100,18 @@ export function PoliceDashboard() {
 
   const { soundEnabled, toggleSound, playNewIncident, playSiren, stopSiren, sirenActive } = useAlertSound();
   const { showNotification } = usePushNotifications();
-  useFCMToken(profile?.uid); // Register for background push notifications
+  useFCMToken(profile?.uid);
+  const { startRing, stopRing } = useRingtone();
+
+  // Play ringtone when incoming call arrives
+  useEffect(() => {
+    if (incomingAgencyCall) {
+      startRing();
+    } else {
+      stopRing();
+    }
+    return () => stopRing();
+  }, [incomingAgencyCall, startRing, stopRing]);
   const prevCountRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -576,18 +588,10 @@ export function PoliceDashboard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {incomingAgencyCall && (
-        <VideoCall
-          onClose={() => setIncomingAgencyCall(null)}
-          incomingRoomId={incomingAgencyCall.roomId}
-          incomingCallerNameProp={incomingAgencyCall.callerName}
-        />
-      )}
-
       {/* ── Video Call — auto-shows when incoming call arrives ───────────── */}
       {incomingAgencyCall && (
         <VideoCall
-          onClose={() => setIncomingAgencyCall(null)}
+          onClose={() => { stopRing(); setIncomingAgencyCall(null); }}
           incomingRoomId={incomingAgencyCall.roomId}
           incomingCallerNameProp={incomingAgencyCall.callerName}
         />
