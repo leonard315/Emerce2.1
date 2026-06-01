@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from 'react';
 import { collection, query, orderBy, doc, writeBatch, serverTimestamp as firestoreTimestamp, getDoc, deleteDoc, increment, updateDoc } from 'firebase/firestore';
@@ -31,7 +31,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import Link from 'next/link';
 import { VideoCall } from "./VideoCall";
 
-// ─── Status badge ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Status badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function StatusBadge({ status }: { status: string }) {
   return (
     <span className={cn(
@@ -63,9 +63,9 @@ export function FireDashboard() {
   const [falseReportConfirm, setFalseReportConfirm] = useState<EmergencyAlert | null>(null);
   const [incomingAgencyCall, setIncomingAgencyCall] = useState<{roomId: string; callerName: string} | null>(null);
 
-  // ── Listen for incoming video calls from users ────────────────────────────
+  // â”€â”€ Listen for incoming video calls from users â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
-    if (!rtdb) return;
+    if (!rtdb || !profile?.uid) return;
     const callRef = ref(rtdb, 'agency_calls/drrm');
 
     // Real-time listener with error handler
@@ -82,7 +82,7 @@ export function FireDashboard() {
       console.error('[FireDashboard] RTDB permission error:', error.code, error.message);
     });
 
-    // Polling fallback every 5s — catches cases where onValue is blocked
+    // Polling fallback every 5s â€” catches cases where onValue is blocked
     const poll = setInterval(async () => {
       try {
         const snap = await get(callRef);
@@ -94,11 +94,11 @@ export function FireDashboard() {
             );
           }
         }
-      } catch { /* permission denied — rules need updating */ }
+      } catch { /* permission denied â€” rules need updating */ }
     }, 5000);
 
     return () => { off(callRef); clearInterval(poll); };
-  }, [rtdb]);
+  }, [rtdb, profile?.uid]);
 
   const alertsQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -145,9 +145,9 @@ export function FireDashboard() {
       playNewIncident('fire');
       playSiren('fire');
       setTimeout(() => stopSiren(), 8000);
-      // Push notification — works even when tab is in background
+      // Push notification â€” works even when tab is in background
       const newest = alerts.find(a => a.status === 'pending');
-      showNotification('🔥 New DRRM Emergency Alert', {
+      showNotification('ðŸ”¥ New DRRM Emergency Alert', {
         body: newest ? `${newest.userName} reported a fire/disaster emergency${newest.exactAddress ? ` at ${newest.exactAddress}` : ''}` : 'A new fire emergency has been reported.',
         tag: 'fire-alert',
         requireInteraction: true,
@@ -216,7 +216,7 @@ export function FireDashboard() {
       toast({ title: `Alert marked as ${status}` });
       if (rtdb) {
         push(ref(rtdb, 'live-logs'), {
-          action: `Fire: ${profile.name} → ${status}`,
+          action: `Fire: ${profile.name} â†’ ${status}`,
           userName: profile.name,
           timestamp: rtdbTimestamp(),
         });
@@ -236,7 +236,7 @@ export function FireDashboard() {
     try {
       const alertData = { status: 'false_report' as AlertStatus, falseReportBy: profile.name, falseReportTime: firestoreTimestamp() };
 
-      // Commit alert status FIRST — before any async reads — so the listener
+      // Commit alert status FIRST â€” before any async reads â€” so the listener
       // immediately gets false_report and the UI stops reverting to responding.
       const statusBatch = writeBatch(db);
       statusBatch.set(doc(db, 'agency_alerts_fire', alert.id), alertData, { merge: true });
@@ -244,7 +244,7 @@ export function FireDashboard() {
       statusBatch.set(doc(db, 'all_alerts', alert.id), alertData, { merge: true });
       await statusBatch.commit();
 
-      // Now do the user penalty (getDoc is safe here — alert is already false_report)
+      // Now do the user penalty (getDoc is safe here â€” alert is already false_report)
       const userRef = doc(db, 'users', alert.userId);
       const userSnap = await getDoc(userRef);
       const current = userSnap.data()?.falseReportCount || 0;
@@ -300,7 +300,7 @@ export function FireDashboard() {
       <AgencySidebar currentView={currentView} onViewChange={setCurrentView} pendingCount={pendingAlerts.length} />
       <SidebarInset className="bg-[#080d1a] border-l border-white/5 overflow-y-auto h-screen min-w-0 flex-1 w-0">
 
-        {/* ── Profile view ─────────────────────────────────────────────────── */}
+        {/* â”€â”€ Profile view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {currentView === 'profile' && (
           <div className="p-6">
             <AgencyProfileView
@@ -310,14 +310,14 @@ export function FireDashboard() {
           </div>
         )}
 
-        {/* ── Settings view ─────────────────────────────────────────────────── */}
+        {/* â”€â”€ Settings view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {currentView === 'settings' && (
           <div className="p-6">
             <AgencySettings />
           </div>
         )}
 
-        {/* ── Dashboard view ────────────────────────────────────────────────── */}
+        {/* â”€â”€ Dashboard view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {currentView === 'dashboard' && (
           <div className="p-6 space-y-6 animate-in fade-in duration-500">
 
@@ -329,8 +329,8 @@ export function FireDashboard() {
                 </div>
                 <div>
                   <h1 className="text-2xl font-black text-white tracking-tight">DRRM Dashboard</h1>
-                  <p className="text-xs text-slate-400 mt-0.5">Disaster Risk Reduction — Real-time incident management</p>
-                  {!rtdb && <p className="text-xs text-red-400 font-bold mt-0.5">⚠ Realtime DB not connected — video calls disabled</p>}
+                  <p className="text-xs text-slate-400 mt-0.5">Disaster Risk Reduction â€” Real-time incident management</p>
+                  {!rtdb && <p className="text-xs text-red-400 font-bold mt-0.5">âš  Realtime DB not connected â€” video calls disabled</p>}
                 </div>
               </div>
               <AlertSoundButton
@@ -413,7 +413,7 @@ export function FireDashboard() {
 
                       <div className="p-4 sm:p-5 space-y-4">
 
-                        {/* ── Header row ── */}
+                        {/* â”€â”€ Header row â”€â”€ */}
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-center gap-3 min-w-0">
                             <div className={cn(
@@ -446,7 +446,7 @@ export function FireDashboard() {
                           <StatusBadge status={alert.status} />
                         </div>
 
-                        {/* ── Reporter info ── */}
+                        {/* â”€â”€ Reporter info â”€â”€ */}
                         <div className="rounded-xl bg-slate-800/50 border border-white/5 p-3">
                           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Reporter Info</p>
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-xs">
@@ -472,7 +472,7 @@ export function FireDashboard() {
                           )}
                         </div>
 
-                        {/* ── Incident Timeline ── */}
+                        {/* â”€â”€ Incident Timeline â”€â”€ */}
                         {(alert.responseStartTime || alert.resolvedTime) && (
                           <div className="rounded-xl bg-slate-800/50 border border-white/5 p-3">
                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Timeline</p>
@@ -480,7 +480,7 @@ export function FireDashboard() {
                               <div className="flex items-center gap-2 text-xs">
                                 <span className="h-1.5 w-1.5 rounded-full bg-yellow-400 flex-shrink-0" />
                                 <span className="text-slate-400">Reported:</span>
-                                <span className="text-white font-semibold">{alert.timestamp?.seconds ? format(alert.timestamp.toDate(), 'MMM d, h:mm a') : '—'}</span>
+                                <span className="text-white font-semibold">{alert.timestamp?.seconds ? format(alert.timestamp.toDate(), 'MMM d, h:mm a') : 'â€”'}</span>
                               </div>
                               {alert.responseStartTime?.seconds && (
                                 <div className="flex items-center gap-2 text-xs">
@@ -510,7 +510,7 @@ export function FireDashboard() {
                           </div>
                         )}
 
-                        {/* ── Photo Evidence ── */}
+                        {/* â”€â”€ Photo Evidence â”€â”€ */}
                         {photo && (
                           <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-800/50 border border-white/10">
                             <button onClick={() => {
@@ -536,11 +536,11 @@ export function FireDashboard() {
                                 const url = URL.createObjectURL(new Blob([u8], { type: mime }));
                                 window.open(url, '_blank');
                               } else { window.open(photo, '_blank'); }
-                            }} className="text-[10px] font-bold text-orange-400 hover:text-orange-300 shrink-0 transition-colors">View →</button>
+                            }} className="text-[10px] font-bold text-orange-400 hover:text-orange-300 shrink-0 transition-colors">View â†’</button>
                           </div>
                         )}
 
-                        {/* ── Voice Note ── */}
+                        {/* â”€â”€ Voice Note â”€â”€ */}
                         {voice && (
                           <div className="rounded-xl border border-white/10 bg-slate-800/50 overflow-hidden">
                             <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5">
@@ -553,7 +553,7 @@ export function FireDashboard() {
                           </div>
                         )}
 
-                        {/* ── Responder info ── */}
+                        {/* â”€â”€ Responder info â”€â”€ */}
                         {alert.responderName && (
                           <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20">
                             <User className="h-3.5 w-3.5 text-blue-400 shrink-0" />
@@ -561,7 +561,7 @@ export function FireDashboard() {
                           </div>
                         )}
 
-                        {/* ── AI Analysis ── */}
+                        {/* â”€â”€ AI Analysis â”€â”€ */}
                         {alert.aiAnalysis ? (
                           <div className="p-3 rounded-xl bg-slate-900/60 border border-orange-500/10">
                             <div className="flex items-center gap-2 mb-2">
@@ -579,7 +579,7 @@ export function FireDashboard() {
                           </Button>
                         )}
 
-                        {/* ── Action buttons ── */}
+                        {/* â”€â”€ Action buttons â”€â”€ */}
                         <div className="flex flex-wrap gap-2 pt-1">
                           {isPending && (
                             <Button onClick={() => updateStatus(alert, 'responding')}
@@ -628,7 +628,7 @@ export function FireDashboard() {
                 )}
               </div>
 
-              {/* Right panel — live map + stats */}
+              {/* Right panel â€” live map + stats */}
               <div className="space-y-4">
 
                 {/* Sector Vector Grid */}
@@ -636,7 +636,7 @@ export function FireDashboard() {
                   headerColor="bg-orange-600"
                   activeAlerts={activeAlerts}
                   alertColor="#f97316"
-                  agencyLabel="🔥 Fire Emergency"
+                  agencyLabel="ðŸ”¥ Fire Emergency"
                   mapHref="/map"
                 />
 
@@ -694,7 +694,7 @@ export function FireDashboard() {
         )}
       </SidebarInset>
 
-      {/* ── False Report Confirmation Dialog ─────────────────────────────── */}
+      {/* â”€â”€ False Report Confirmation Dialog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <AlertDialog open={falseReportConfirm !== null} onOpenChange={(open) => { if (!open) setFalseReportConfirm(null); }}>
         <AlertDialogContent className="bg-slate-950 border-white/10 rounded-2xl">
           <AlertDialogHeader>
@@ -722,7 +722,7 @@ export function FireDashboard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* ── Video Call — auto-shows when incoming call arrives ───────────── */}
+      {/* â”€â”€ Video Call â€” auto-shows when incoming call arrives â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {incomingAgencyCall && (
         <VideoCall
           onClose={() => { stopRing(); setIncomingAgencyCall(null); }}

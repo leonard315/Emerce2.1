@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from 'react';
 import { collection, query, orderBy, doc, writeBatch, serverTimestamp as firestoreTimestamp, getDoc, deleteDoc, increment, updateDoc } from 'firebase/firestore';
@@ -62,9 +62,9 @@ export function PoliceDashboard() {
   const [falseReportConfirm, setFalseReportConfirm] = useState<EmergencyAlert | null>(null);
   const [incomingAgencyCall, setIncomingAgencyCall] = useState<{roomId: string; callerName: string} | null>(null);
 
-  // ── Listen for incoming video calls from users ────────────────────────────
+  // â”€â”€ Listen for incoming video calls from users â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
-    if (!rtdb) return;
+    if (!rtdb || !profile?.uid) return;
     const callRef = ref(rtdb, 'agency_calls/security');
 
     const unsub = onValue(callRef, (snap) => {
@@ -95,7 +95,7 @@ export function PoliceDashboard() {
     }, 5000);
 
     return () => { off(callRef); clearInterval(poll); };
-  }, [rtdb]);
+  }, [rtdb, profile?.uid]);
 
   const alertsQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -142,7 +142,7 @@ export function PoliceDashboard() {
       playSiren('police');
       setTimeout(() => stopSiren(), 8000);
       const newest = alerts.find(a => a.status === 'pending');
-      showNotification('🚔 New Security Emergency Alert', {
+      showNotification('ðŸš” New Security Emergency Alert', {
         body: newest ? `${newest.userName} reported a crime/security emergency${newest.exactAddress ? ` at ${newest.exactAddress}` : ''}` : 'A new crime emergency has been reported.',
         tag: 'police-alert',
         requireInteraction: true,
@@ -211,7 +211,7 @@ export function PoliceDashboard() {
       toast({ title: `Alert marked as ${status}` });
       if (rtdb) {
         push(ref(rtdb, 'live-logs'), {
-          action: `Police: ${profile.name} → ${status}`,
+          action: `Police: ${profile.name} â†’ ${status}`,
           userName: profile.name,
           timestamp: rtdbTimestamp(),
         });
@@ -231,7 +231,7 @@ export function PoliceDashboard() {
     try {
       const alertData = { status: 'false_report' as AlertStatus, falseReportBy: profile.name, falseReportTime: firestoreTimestamp() };
 
-      // Commit alert status FIRST — before any async reads — so the listener
+      // Commit alert status FIRST â€” before any async reads â€” so the listener
       // immediately gets false_report and the UI stops reverting to responding.
       const statusBatch = writeBatch(db);
       statusBatch.set(doc(db, 'agency_alerts_police', alert.id), alertData, { merge: true });
@@ -239,7 +239,7 @@ export function PoliceDashboard() {
       statusBatch.set(doc(db, 'all_alerts', alert.id), alertData, { merge: true });
       await statusBatch.commit();
 
-      // Now do the user penalty (getDoc is safe here — alert is already false_report)
+      // Now do the user penalty (getDoc is safe here â€” alert is already false_report)
       const userRef = doc(db, 'users', alert.userId);
       const userSnap = await getDoc(userRef);
       const current = userSnap.data()?.falseReportCount || 0;
@@ -320,7 +320,7 @@ export function PoliceDashboard() {
                 </div>
                 <div>
                   <h1 className="text-2xl font-black text-white tracking-tight">Security Dashboard</h1>
-                  <p className="text-xs text-slate-400 mt-0.5">School Security Department — Real-time incident management</p>
+                  <p className="text-xs text-slate-400 mt-0.5">School Security Department â€” Real-time incident management</p>
                 </div>
               </div>
               <AlertSoundButton
@@ -460,7 +460,7 @@ export function PoliceDashboard() {
                                 const url = URL.createObjectURL(new Blob([u8], { type: mime }));
                                 window.open(url, '_blank');
                               } else { window.open(photo, '_blank'); }
-                            }} className="text-[10px] font-bold text-blue-400 hover:text-blue-300 shrink-0 transition-colors">View →</button>
+                            }} className="text-[10px] font-bold text-blue-400 hover:text-blue-300 shrink-0 transition-colors">View â†’</button>
                           </div>
                         )}
                         {/* Voice */}
@@ -526,7 +526,7 @@ export function PoliceDashboard() {
                   headerColor="bg-blue-600"
                   activeAlerts={activeAlerts}
                   alertColor="#3b82f6"
-                  agencyLabel="🚔 Crime Emergency"
+                  agencyLabel="ðŸš” Crime Emergency"
                   mapHref="/map"
                 />
 
@@ -577,7 +577,7 @@ export function PoliceDashboard() {
         )}
       </SidebarInset>
 
-      {/* ── False Report Confirmation Dialog ─────────────────────────────── */}
+      {/* â”€â”€ False Report Confirmation Dialog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <AlertDialog open={falseReportConfirm !== null} onOpenChange={(open) => { if (!open) setFalseReportConfirm(null); }}>
         <AlertDialogContent className="bg-slate-950 border-white/10 rounded-2xl">
           <AlertDialogHeader>
@@ -605,7 +605,7 @@ export function PoliceDashboard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* ── Video Call — auto-shows when incoming call arrives ───────────── */}
+      {/* â”€â”€ Video Call â€” auto-shows when incoming call arrives â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {incomingAgencyCall && (
         <VideoCall
           onClose={() => { stopRing(); setIncomingAgencyCall(null); }}

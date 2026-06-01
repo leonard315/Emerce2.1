@@ -236,10 +236,16 @@ export function VideoCall({ onClose, targetUserId, targetUserName, alertType, in
     if(!p)return;
     const offer=await p.createOffer({offerToReceiveAudio:true,offerToReceiveVideo:true});
     await p.setLocalDescription(offer);
-    await set(ref(rtdb,`calls/${roomId}`),{roomId,offer:{type:offer.type,sdp:offer.sdp},callerId:profile.uid,callerName:profile.name,callerRole:profile.role,createdAt:Date.now()});
-    console.log('[VideoCall] Written to calls/', roomId);
-    await set(ref(rtdb,`agency_calls/${channel}`),{roomId,callerId:profile.uid,callerName:profile.name,createdAt:Date.now()});
-    console.log('[VideoCall] Written to agency_calls/', channel);
+    try {
+      await set(ref(rtdb,`calls/${roomId}`),{roomId,offer:{type:offer.type,sdp:offer.sdp},callerId:profile.uid,callerName:profile.name,callerRole:profile.role,createdAt:Date.now()});
+      console.log('[VideoCall] Written to calls/', roomId);
+      await set(ref(rtdb,`agency_calls/${channel}`),{roomId,callerId:profile.uid,callerName:profile.name,createdAt:Date.now()});
+      console.log('[VideoCall] Written to agency_calls/', channel);
+    } catch(e:any) {
+      console.error('[VideoCall] RTDB write failed:', e.code, e.message);
+      setErr(`Database write failed: ${e.message}`);
+      return;
+    }
     const aRef=ref(rtdb,`calls/${roomId}/answer`);
     onValue(aRef,async snap=>{if(snap.exists()&&p.currentRemoteDescription===null)await p.setRemoteDescription(new RTCSessionDescription(snap.val())).catch(()=>{});});
     ansUnsub.current=()=>off(aRef);

@@ -72,9 +72,26 @@ export function MedicalDashboard() {
       } else {
         setIncomingAgencyCall(null);
       }
+    }, (error: any) => {
+      console.error('[MedicalDashboard] RTDB error:', error.code, error.message);
     });
-    return () => off(callRef);
-  }, [rtdb]);
+
+    const poll = setInterval(async () => {
+      try {
+        const snap = await get(callRef);
+        if (snap.exists()) {
+          const data = snap.val();
+          if (Date.now() - data.createdAt < 60000) {
+            setIncomingAgencyCall((prev: any) =>
+              prev?.roomId === data.roomId ? prev : { roomId: data.roomId, callerName: data.callerName }
+            );
+          }
+        }
+      } catch { /* permission denied */ }
+    }, 5000);
+
+    return () => { off(callRef); clearInterval(poll); };
+  }, [rtdb, profile?.uid]);
 
   const alertsQuery = useMemoFirebase(() => {
     if (!db) return null;
