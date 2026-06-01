@@ -146,7 +146,7 @@ export function VideoCall({ onClose, targetUserId, targetUserName, alertType, in
     if(cs==='incoming'){ startRing(); }
     else { stopRing(); }
     return ()=>stopRing();
-  },[cs,startRing,stopRing]);
+  },[cs]);
 
   // Cleanup
   const cleanup = useCallback(async(reason:'hangup'|'remote'='hangup')=>{
