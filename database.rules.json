@@ -1,0 +1,28 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+    "agency_calls": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "calls": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "call_signals": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null"
+      }
+    },
+    "live-logs": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "status": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    }
+  }
+}

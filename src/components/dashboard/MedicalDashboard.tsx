@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { collection, query, orderBy, doc, writeBatch, serverTimestamp as firestoreTimestamp, getDoc, deleteDoc, increment, updateDoc } from 'firebase/firestore';
-import { ref, push, onValue, off, serverTimestamp as rtdbTimestamp } from 'firebase/database';
+import { ref, push, onValue, off, get, serverTimestamp as rtdbTimestamp } from 'firebase/database';
 import { useFirestore, useCollection, useDatabase, useMemoFirebase } from '@/firebase';
 import { EmergencyAlert, AlertStatus } from '@/lib/types';
 import { Button } from "@/components/ui/button";

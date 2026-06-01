@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { collection, query, orderBy, doc, writeBatch, serverTimestamp as firestoreTimestamp, getDoc, deleteDoc, increment, updateDoc } from 'firebase/firestore';
-import { ref, push, onValue, off, serverTimestamp as rtdbTimestamp } from 'firebase/database';
+import { ref, push, onValue, off, get, serverTimestamp as rtdbTimestamp } from 'firebase/database';
 import { useFirestore, useCollection, useDatabase, useMemoFirebase } from '@/firebase';
 import { EmergencyAlert, AlertStatus } from '@/lib/types';
 import { Button } from "@/components/ui/button";
@@ -65,10 +65,9 @@ export function PoliceDashboard() {
   // ── Listen for incoming video calls from users ────────────────────────────
   useEffect(() => {
     if (!rtdb) return;
-    console.log('[PoliceDashboard] Listening on agency_calls/security, rtdb:', !!rtdb);
     const callRef = ref(rtdb, 'agency_calls/security');
+
     const unsub = onValue(callRef, (snap) => {
-      console.log('[PoliceDashboard] agency_calls/security snapshot:', snap.exists(), snap.val());
       if (snap.exists()) {
         const data = snap.val();
         if (Date.now() - data.createdAt < 60000) {
@@ -77,8 +76,25 @@ export function PoliceDashboard() {
       } else {
         setIncomingAgencyCall(null);
       }
+    }, (error: any) => {
+      console.error('[PoliceDashboard] RTDB permission error:', error.code, error.message);
     });
-    return () => off(callRef);
+
+    const poll = setInterval(async () => {
+      try {
+        const snap = await get(callRef);
+        if (snap.exists()) {
+          const data = snap.val();
+          if (Date.now() - data.createdAt < 60000) {
+            setIncomingAgencyCall(prev =>
+              prev?.roomId === data.roomId ? prev : { roomId: data.roomId, callerName: data.callerName }
+            );
+          }
+        }
+      } catch { /* permission denied */ }
+    }, 5000);
+
+    return () => { off(callRef); clearInterval(poll); };
   }, [rtdb]);
 
   const alertsQuery = useMemoFirebase(() => {
