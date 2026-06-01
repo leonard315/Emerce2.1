@@ -221,7 +221,11 @@ export function VideoCall({ onClose, targetUserId, targetUserName, alertType, in
 
   // Broadcast call (user -> agency)
   const broadcastCall = useCallback(async(channel:string)=>{
-    if(!rtdb||!profile)return;
+    if(!rtdb||!profile){
+      console.error('[VideoCall] broadcastCall: rtdb or profile is null', {rtdb:!!rtdb, profile:!!profile});
+      setErr('Realtime Database not available. Check Firebase config.');
+      return;
+    }
     console.log('[VideoCall] broadcastCall starting, channel:', channel, 'rtdb:', !!rtdb);
     setErr(null); setCs('calling');
     const s=await getMedia();
@@ -296,12 +300,9 @@ export function VideoCall({ onClose, targetUserId, targetUserName, alertType, in
   },[rtdb,profile?.uid]);
 
   // Auto-initiate on mount — wait for rtdb and profile to be ready
-  const hasInitiated = useRef(false);
   useEffect(()=>{
-    if(!profile||!rtdb)return;
-    if(hasInitiated.current)return;
+    if(!profile||!rtdb||csRef.current!=='idle')return;
     if(incomingRoomId)return;
-    hasInitiated.current=true;
     if(targetUserId&&targetUserName){
       (async()=>{
         setErr(null); setCs('calling');
@@ -439,6 +440,10 @@ export function VideoCall({ onClose, targetUserId, targetUserName, alertType, in
               <video ref={locRef} autoPlay playsInline muted className="w-full h-full object-cover"/>
               {!locVid && <div className="absolute inset-0 flex items-center justify-center"><span className="text-xs text-slate-500">Camera starting...</span></div>}
               <div className="absolute bottom-2 left-2 text-[10px] text-white/60 font-bold bg-black/40 px-2 py-0.5 rounded-full">You</div>
+            </div>
+            {/* Debug info */}
+            <div className="mx-6 mb-2 px-3 py-2 rounded-xl bg-slate-800/60 border border-white/5">
+              <p className="text-[10px] text-slate-500 font-mono">DB: {rtdb ? '✅ connected' : '❌ null'} | Channel: {agCh || 'none'} | State: {cs}</p>
             </div>
             <video ref={remRef} autoPlay playsInline className="hidden"/>
             {err && <div className="mx-6 mb-4 px-4 py-3 rounded-xl bg-red-900/30 border border-red-500/30"><p className="text-xs text-red-300 text-center">{err}</p></div>}

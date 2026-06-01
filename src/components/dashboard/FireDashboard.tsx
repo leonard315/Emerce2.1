@@ -299,6 +299,7 @@ export function FireDashboard() {
                 <div>
                   <h1 className="text-2xl font-black text-white tracking-tight">DRRM Dashboard</h1>
                   <p className="text-xs text-slate-400 mt-0.5">Disaster Risk Reduction — Real-time incident management</p>
+                  {!rtdb && <p className="text-xs text-red-400 font-bold mt-0.5">⚠ Realtime DB not connected — video calls disabled</p>}
                 </div>
               </div>
               <AlertSoundButton
