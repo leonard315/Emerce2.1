@@ -66,8 +66,8 @@ export function getSdks(firebaseApp: FirebaseApp) {
   let database = null;
   try {
     database = getDatabase(firebaseApp);
-  } catch {
-    // Realtime Database not configured (no databaseURL) — safe to ignore
+  } catch (e) {
+    console.error('[Firebase] Realtime Database failed to initialize:', e);
   }
 
   return {
