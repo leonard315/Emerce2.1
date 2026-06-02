@@ -211,29 +211,36 @@ function AuthContent() {
   };
 
   const handleForgotPassword = async () => {
-    if (!resetEmail.trim()) { toast({ variant: 'destructive', title: 'Enter your email' }); return; }
+    if (!resetEmail.trim()) {
+      toast({ variant: 'destructive', title: 'Enter your email address' });
+      return;
+    }
+    const emailVal = resetEmail.trim().toLowerCase();
+    // Basic email format check
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+      toast({ variant: 'destructive', title: 'Invalid email', description: 'Please enter a valid email address.' });
+      return;
+    }
     setResetLoading(true);
     try {
-      await sendPasswordResetEmail(auth, resetEmail.trim(), {
-        url: typeof window !== 'undefined' ? `${window.location.origin}/auth` : 'https://emerce2-1.vercel.app/auth',
-        handleCodeInApp: false,
+      // Send without continueUrl to avoid unauthorized-domain errors
+      await sendPasswordResetEmail(auth, emailVal);
+      toast({
+        title: '✅ Reset email sent',
+        description: `Check your inbox (and spam folder) for a password reset link.`,
       });
-      // Firebase sends reset email even if email doesn't exist (for security)
-      // Always show success to prevent email enumeration
-      toast({ title: '✅ Reset email sent', description: `If ${resetEmail} is registered, you'll receive a reset link shortly. Check your inbox and spam folder.` });
       setForgotOpen(false);
       setResetEmail('');
     } catch (error: any) {
-      console.error('[ForgotPassword] Error:', error.code, error.message);
       const code = error.code || '';
       const msg =
         code === 'auth/user-not-found' ? 'No account found with that email.' :
         code === 'auth/invalid-email' ? 'Please enter a valid email address.' :
         code === 'auth/missing-email' ? 'Please enter your email address.' :
-        code === 'auth/too-many-requests' ? 'Too many attempts. Please wait a few minutes and try again.' :
-        code === 'auth/unauthorized-continue-uri' ? 'Domain not authorized. Please contact support.' :
-        error.message;
-      toast({ variant: 'destructive', title: 'Failed to send reset email', description: `${msg} (${code})` });
+        code === 'auth/too-many-requests' ? 'Too many attempts. Wait a few minutes and try again.' :
+        code === 'auth/network-request-failed' ? 'Network error. Check your connection and try again.' :
+        error.message || 'Failed to send reset email.';
+      toast({ variant: 'destructive', title: 'Failed to send reset email', description: msg });
     } finally {
       setResetLoading(false);
     }
